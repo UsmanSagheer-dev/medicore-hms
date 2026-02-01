@@ -4,6 +4,7 @@ import { toast } from "react-hot-toast";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
+import { Search } from "lucide-react";
 
 function PatientRegistrationForm() {
   const fullNameRef = useRef<HTMLInputElement>(null);
@@ -83,17 +84,18 @@ function PatientRegistrationForm() {
     if (consultationFeeRef.current) consultationFeeRef.current.value = "";
     setPaymentStatus("pending");
   };
-  
+
   return (
-    <div className="w-full md:w-1/2  p-4 bg-white rounded-lg shadow-sm border border-gray-200 h-full">
+    <div className="w-full md:w-1/2 p-4 bg-white rounded-lg shadow-sm border border-gray-200 h-full overflow-y-auto">
       <div className="mb-6">
         <Input
           placeholder="Search Old Patient / CNIC"
+          icon={<Search />}
           className="w-full bg-gray-50/50"
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
         <Input placeholder="Full Name" label="Full Name" ref={fullNameRef} />
         <Input
           placeholder="Father Name"
@@ -194,11 +196,7 @@ function PatientRegistrationForm() {
       </div>
 
       <div className="mt-8 flex justify-end gap-4">
-        <Button
-          variant="secondary"
-          size="md"
-          onClick={handleReset}
-        >
+        <Button variant="secondary" size="md" onClick={handleReset}>
           Reset
         </Button>
         <Button variant="primary" size="md" onClick={handleRegister}>

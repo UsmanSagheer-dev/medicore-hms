@@ -18,7 +18,7 @@ const TokenCard: React.FC<TokenData> = ({
   type = "follow-up/New",
 }) => {
   return (
-    <div className="max-w-md w-full bg-white border border-black rounded-lg overflow-hidden font-sans text-black shadow-md relative print:shadow-none print:border shrink-0">
+    <div className="max-w-full w-full bg-white border border-black rounded-lg overflow-hidden font-sans text-black shadow-md relative print:shadow-none print:border shrink-0">
       {/* Badge */}
       <div className="absolute top-2 right-2 border border-black rounded-full px-2 py-0.5 text-[10px] font-bold bg-white">
         {type}

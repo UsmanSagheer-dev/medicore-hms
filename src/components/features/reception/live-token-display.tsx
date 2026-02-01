@@ -1,3 +1,4 @@
+import Input from '@/components/ui/Input';
 import TokenCard from '@/components/ui/TokenCard';
 import { TokenData } from '@/types/token';
 
@@ -51,8 +52,13 @@ function LiveTokenDisplay() {
   ];
 
   return (
-    <div className="w-full md:w-1/2 flex flex-col gap-4 p-4 bg-gray-50 border-l border-gray-200 overflow-y-auto max-h-[calc(100vh-30px)] rounded-lg">
-      <h2 className="text-lg font-bold text-gray-800 mb-2 border-b pb-2">Live Token Queue</h2>
+    <div className="w-full md:w-1/2 flex flex-col gap-4 p-4 bg-gray-50 border-l border-gray-200 overflow-y-auto h-full rounded-lg">
+     <div className="mb-6">
+        <Input
+          placeholder="Search Old Patient / CNIC"
+          className="w-full bg-gray-50/50"
+        />
+      </div>
       <div className="flex flex-col gap-4 items-center">
         {tokens.map((token) => (
           <TokenCard key={token.tokenNo} {...token} />

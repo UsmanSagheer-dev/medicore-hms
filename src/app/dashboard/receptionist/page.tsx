@@ -4,7 +4,7 @@ import React from 'react'
 
 function ReceptionistDashboard() {
     return (
-        <div className='flex gap-4'>
+        <div className='flex gap-4 h-full flex-wrap md:flex-nowrap'>
             <PatientRegistrationForm />
             <LiveTokenDisplay />
         </div>

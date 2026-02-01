@@ -85,7 +85,7 @@ function PatientRegistrationForm() {
   };
   
   return (
-    <div className="w-1/2  p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+    <div className="w-full md:w-1/2  p-4 bg-white rounded-lg shadow-sm border border-gray-200 h-full">
       <div className="mb-6">
         <Input
           placeholder="Search Old Patient / CNIC"
@@ -93,7 +93,7 @@ function PatientRegistrationForm() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
         <Input placeholder="Full Name" label="Full Name" ref={fullNameRef} />
         <Input
           placeholder="Father Name"

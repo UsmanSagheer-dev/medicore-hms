@@ -49,7 +49,7 @@ const Header = () => {
             Medicore HMS
           </h1>
           <p className="text-xs text-gray-500 font-medium">
-            Usman Medical Center - Reception Panel
+            MediCore Hospital & Research Center
           </p>
         </div>
       </div>

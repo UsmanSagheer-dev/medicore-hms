@@ -26,7 +26,7 @@ const TokenCard: React.FC<TokenData> = ({
       <div className="p-3">
         <div className="text-center border-b border-black pb-1.5 mb-2">
           <h1 className="text-sm font-bold uppercase tracking-wider leading-tight">
-            Usman Medical Center
+            MediCore Hospital & Research Center
           </h1>
           <p className="text-[10px] font-medium leading-none">
             Gulshan-e-Iqbal, Karachi

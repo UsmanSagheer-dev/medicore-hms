@@ -5,8 +5,14 @@ import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import { Search } from "lucide-react";
+import { TokenData } from "@/types/token";
 
-function PatientRegistrationForm() {
+interface PatientRegistrationFormProps {
+  onRegister: (token: TokenData) => void;
+  lastTokenNo: number;
+}
+
+function PatientRegistrationForm({ onRegister, lastTokenNo }: PatientRegistrationFormProps) {
   const fullNameRef = useRef<HTMLInputElement>(null);
   const fatherNameRef = useRef<HTMLInputElement>(null);
   const ageRef = useRef<HTMLInputElement>(null);
@@ -15,7 +21,6 @@ function PatientRegistrationForm() {
   const phoneNumberRef = useRef<HTMLInputElement>(null);
   const selectDoctorRef = useRef<HTMLSelectElement>(null);
   const cnicRef = useRef<HTMLInputElement>(null);
-  const visitDateRef = useRef<HTMLInputElement>(null);
   const visitTypeRef = useRef<HTMLSelectElement>(null);
   const discountRef = useRef<HTMLInputElement>(null);
   const consultationFeeRef = useRef<HTMLInputElement>(null);
@@ -27,7 +32,7 @@ function PatientRegistrationForm() {
       fieldName: string,
     ) => {
       if (!ref.current?.value) {
-        toast(`Please enter ${fieldName}`);
+        toast.error(`Please enter ${fieldName}`);
         ref.current?.focus();
         ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
         return false;
@@ -43,20 +48,18 @@ function PatientRegistrationForm() {
     if (!validateField(phoneNumberRef, "Phone Number")) return;
     if (!validateField(selectDoctorRef, "Doctor")) return;
     if (!validateField(cnicRef, "CNIC")) return;
-    if (!validateField(visitDateRef, "Visit Date")) return;
     if (!validateField(visitTypeRef, "Visit Type")) return;
-    if (!validateField(discountRef, "Discount")) return;
     if (!validateField(consultationFeeRef, "Consultation Fee")) return;
 
     if (cnicRef.current?.value.length !== 13) {
-      toast("Please enter a valid CNIC (13 digits)");
+      toast.error("Please enter a valid CNIC (13 digits)");
       cnicRef.current?.focus();
       cnicRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
     if (phoneNumberRef.current?.value.length !== 11) {
-      toast("Please enter a valid Phone Number (11 digits)");
+      toast.error("Please enter a valid Phone Number (11 digits)");
       phoneNumberRef.current?.focus();
       phoneNumberRef.current?.scrollIntoView({
         behavior: "smooth",
@@ -65,7 +68,32 @@ function PatientRegistrationForm() {
       return;
     }
 
-    toast.success("Patient registered successfully!");
+    const doctorElement = selectDoctorRef.current;
+    const selectedDoctorText = doctorElement?.options[doctorElement.selectedIndex].text || "";
+    const roomMatch = selectedDoctorText.match(/Room: (\d+)/);
+    const roomNo = roomMatch ? roomMatch[1] : "N/A";
+    const doctorName = selectedDoctorText.split('(')[0].trim();
+
+    const newToken: TokenData = {
+      tokenNo: (lastTokenNo + 1).toString().padStart(2, '0'),
+      patientName: fullNameRef.current?.value || "",
+      fatherName: fatherNameRef.current?.value || "",
+      age: `${ageRef.current?.value} Years`,
+      gender: genderRef.current?.value || "",
+      cnic: cnicRef.current?.value || "",
+      doctorName: doctorName,
+      specialization: "General Physician", 
+      roomNo: roomNo,
+      date: new Date().toLocaleDateString( [],{ day: '2-digit', month: 'short', year: 'numeric' }),
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      fee: consultationFeeRef.current?.value || "0",
+      isPaid: paymentStatus === "paid",
+      type: visitTypeRef.current?.value === "new" ? "New Case" : 
+            visitTypeRef.current?.value === "revisit" ? "Revisit" : "Follow Up"
+    };
+
+    onRegister(newToken);
+    toast.success(`Token ${newToken.tokenNo} generated successfully!`);
     handleReset();
   };
 
@@ -78,7 +106,6 @@ function PatientRegistrationForm() {
     if (phoneNumberRef.current) phoneNumberRef.current.value = "";
     if (selectDoctorRef.current) selectDoctorRef.current.value = "";
     if (cnicRef.current) cnicRef.current.value = "";
-    if (visitDateRef.current) visitDateRef.current.value = "";
     if (visitTypeRef.current) visitTypeRef.current.value = "";
     if (discountRef.current) discountRef.current.value = "";
     if (consultationFeeRef.current) consultationFeeRef.current.value = "";
@@ -134,12 +161,6 @@ function PatientRegistrationForm() {
         />
         <Input placeholder="CNIC" label="CNIC" ref={cnicRef} />
 
-        <Input
-          type="date"
-          placeholder="Visit Date"
-          label="Visit Date"
-          ref={visitDateRef}
-        />
         <Select
           ref={visitTypeRef}
           label="Visit Type"
@@ -208,3 +229,4 @@ function PatientRegistrationForm() {
 }
 
 export default PatientRegistrationForm;
+

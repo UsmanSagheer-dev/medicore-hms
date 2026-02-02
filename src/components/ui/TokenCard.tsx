@@ -19,13 +19,11 @@ const TokenCard: React.FC<TokenData> = ({
 }) => {
   return (
     <div className="max-w-full w-full bg-white border border-black rounded-lg overflow-hidden font-sans text-black shadow-md relative print:shadow-none print:border shrink-0">
-      {/* Badge */}
       <div className="absolute top-2 right-2 border border-black rounded-full px-2 py-0.5 text-[10px] font-bold bg-white">
         {type}
       </div>
 
       <div className="p-3">
-        {/* Header */}
         <div className="text-center border-b border-black pb-1.5 mb-2">
           <h1 className="text-sm font-bold uppercase tracking-wider leading-tight">
             Usman Medical Center
@@ -35,14 +33,12 @@ const TokenCard: React.FC<TokenData> = ({
           </p>
         </div>
 
-        {/* Token Number */}
         <div className="text-center mb-2">
           <h2 className="text-xs font-bold uppercase leading-none">
             Token No: <span className="text-xl ml-1">{tokenNo}</span>
           </h2>
         </div>
 
-        {/* Details */}
         <div className="space-y-0.5 text-[11px] font-semibold leading-tight">
           <div className="flex gap-2">
             <span className="min-w-[65px] opacity-70 font-bold">Patient:</span>

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Mail, Lock, LogIn } from "lucide-react";
-import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
 function Login() {
@@ -41,7 +40,7 @@ function Login() {
 
           <div className="flex justify-end">
             <Link
-              href="#"
+              href="/auth/forgetPassword"
               className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
             >
               Forgot password?
@@ -60,10 +59,10 @@ function Login() {
           </label>
         </div>
 
-        <Button className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2">
+        <Link href="/auth/forgetPassword" className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2">
           <LogIn className="w-5 h-5" />
           Sign In
-        </Button>
+        </Link>
       </form>
 
       <div className="mt-8 text-center">

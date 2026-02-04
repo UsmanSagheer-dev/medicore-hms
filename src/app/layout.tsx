@@ -27,10 +27,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 h-screen flex flex-col overflow-hidden`}
       >
         {!isAuthPage && <Header />}
-        <main className="">{children}</main>
+        <main className="flex-1 overflow-hidden p-4 sm:p-6">{children}</main>
         <Toaster position="top-right" />
       </body>
     </html>

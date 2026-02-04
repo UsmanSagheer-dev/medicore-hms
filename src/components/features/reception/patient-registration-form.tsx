@@ -12,7 +12,10 @@ interface PatientRegistrationFormProps {
   lastTokenNo: number;
 }
 
-function PatientRegistrationForm({ onRegister, lastTokenNo }: PatientRegistrationFormProps) {
+function PatientRegistrationForm({
+  onRegister,
+  lastTokenNo,
+}: PatientRegistrationFormProps) {
   const fullNameRef = useRef<HTMLInputElement>(null);
   const fatherNameRef = useRef<HTMLInputElement>(null);
   const ageRef = useRef<HTMLInputElement>(null);
@@ -69,27 +72,39 @@ function PatientRegistrationForm({ onRegister, lastTokenNo }: PatientRegistratio
     }
 
     const doctorElement = selectDoctorRef.current;
-    const selectedDoctorText = doctorElement?.options[doctorElement.selectedIndex].text || "";
+    const selectedDoctorText =
+      doctorElement?.options[doctorElement.selectedIndex].text || "";
     const roomMatch = selectedDoctorText.match(/Room: (\d+)/);
     const roomNo = roomMatch ? roomMatch[1] : "N/A";
-    const doctorName = selectedDoctorText.split('(')[0].trim();
+    const doctorName = selectedDoctorText.split("(")[0].trim();
 
     const newToken: TokenData = {
-      tokenNo: (lastTokenNo + 1).toString().padStart(2, '0'),
+      tokenNo: (lastTokenNo + 1).toString().padStart(2, "0"),
       patientName: fullNameRef.current?.value || "",
       fatherName: fatherNameRef.current?.value || "",
       age: `${ageRef.current?.value} Years`,
       gender: genderRef.current?.value || "",
       cnic: cnicRef.current?.value || "",
       doctorName: doctorName,
-      specialization: "General Physician", 
+      specialization: "General Physician",
       roomNo: roomNo,
-      date: new Date().toLocaleDateString( [],{ day: '2-digit', month: 'short', year: 'numeric' }),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: new Date().toLocaleDateString([], {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
       fee: consultationFeeRef.current?.value || "0",
       isPaid: paymentStatus === "paid",
-      type: visitTypeRef.current?.value === "new" ? "New Case" : 
-            visitTypeRef.current?.value === "revisit" ? "Revisit" : "Follow Up"
+      visitType:
+        visitTypeRef.current?.value === "new"
+          ? "New"
+          : visitTypeRef.current?.value === "revisit"
+            ? "Revisit"
+            : "Follow up",
     };
 
     onRegister(newToken);
@@ -113,8 +128,8 @@ function PatientRegistrationForm({ onRegister, lastTokenNo }: PatientRegistratio
   };
 
   return (
-    <div className="w-full md:w-1/2 p-4 bg-white rounded-lg shadow-sm border border-gray-200 h-full overflow-y-auto">
-      <div className="mb-6">
+    <div className="w-full h-full p-6 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
+      <div className="mb-6 shrink-0">
         <Input
           placeholder="Search Old Patient / CNIC"
           icon={<Search />}
@@ -122,101 +137,103 @@ function PatientRegistrationForm({ onRegister, lastTokenNo }: PatientRegistratio
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
-        <Input placeholder="Full Name" label="Full Name" ref={fullNameRef} />
-        <Input
-          placeholder="Father Name"
-          label="Father Name"
-          ref={fatherNameRef}
-        />
-        <Input type="number" placeholder="Age" label="Age" ref={ageRef} />
-        <Select
-          ref={genderRef}
-          label="Gender"
-          placeholder="Gender"
-          options={[
-            { value: "Male", label: "Male" },
-            { value: "Female", label: "Female" },
-            { value: "Other", label: "Other" },
-          ]}
-        />
+      <div className="  custom-scrollbar ">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Input placeholder="Full Name" label="Full Name" ref={fullNameRef} />
+          <Input
+            placeholder="Father Name"
+            label="Father Name"
+            ref={fatherNameRef}
+          />
+          <Input type="number" placeholder="Age" label="Age" ref={ageRef} />
+          <Select
+            ref={genderRef}
+            label="Gender"
+            placeholder="Gender"
+            options={[
+              { value: "Male", label: "Male" },
+              { value: "Female", label: "Female" },
+              { value: "Other", label: "Other" },
+            ]}
+          />
 
-        <Input placeholder="Address" label="Address" ref={addressRef} />
-        <Input
-          placeholder="Phone Number"
-          type="tel"
-          label="Phone Number"
-          ref={phoneNumberRef}
-        />
+          <Input placeholder="Address" label="Address" ref={addressRef} />
+          <Input
+            placeholder="Phone Number"
+            type="tel"
+            label="Phone Number"
+            ref={phoneNumberRef}
+          />
 
-        <Select
-          ref={selectDoctorRef}
-          label="Select Doctor"
-          placeholder="Select Doctor"
-          options={[
-            { value: "1", label: "Dr. John Doe (Room: 101)" },
-            { value: "2", label: "Dr. Jane Smith (Room: 102)" },
-            { value: "3", label: "Dr. Robert Johnson (Room: 104)" },
-          ]}
-        />
-        <Input placeholder="CNIC" label="CNIC" ref={cnicRef} />
+          <Select
+            ref={selectDoctorRef}
+            label="Select Doctor"
+            placeholder="Select Doctor"
+            options={[
+              { value: "1", label: "Dr. John Doe (Room: 101)" },
+              { value: "2", label: "Dr. Jane Smith (Room: 102)" },
+              { value: "3", label: "Dr. Robert Johnson (Room: 104)" },
+            ]}
+          />
+          <Input placeholder="CNIC" label="CNIC" ref={cnicRef} />
 
-        <Select
-          ref={visitTypeRef}
-          label="Visit Type"
-          placeholder="Visit Type"
-          options={[
-            { value: "new", label: "New Case" },
-            { value: "revisit", label: "Revisit" },
-            { value: "followup", label: "Follow Up" },
-          ]}
-        />
+          <Select
+            ref={visitTypeRef}
+            label="Visit Type"
+            placeholder="Visit Type"
+            options={[
+              { value: "new", label: "New Case" },
+              { value: "revisit", label: "Revisit" },
+              { value: "followup", label: "Follow Up" },
+            ]}
+          />
 
-        <Input
-          placeholder="Discount"
-          type="number"
-          label="Discount"
-          ref={discountRef}
-        />
-        <Input
-          placeholder="Consultation Fee"
-          type="number"
-          label="Consultation Fee"
-          ref={consultationFeeRef}
-        />
+          <Input
+            placeholder="Discount"
+            type="number"
+            label="Discount"
+            ref={discountRef}
+          />
+          <Input
+            placeholder="Consultation Fee"
+            type="number"
+            label="Consultation Fee"
+            ref={consultationFeeRef}
+          />
 
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700">
-            Payment Status
-          </label>
-          <div className="flex gap-4 mt-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="paymentStatus"
-                value="pending"
-                checked={paymentStatus === "pending"}
-                onChange={(e) => setPaymentStatus(e.target.value)}
-                className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700">Pending</span>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">
+              Payment Status
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="paymentStatus"
-                value="paid"
-                checked={paymentStatus === "paid"}
-                onChange={(e) => setPaymentStatus(e.target.value)}
-                className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700">Paid</span>
-            </label>
+            <div className="flex gap-4 mt-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="paymentStatus"
+                  value="pending"
+                  checked={paymentStatus === "pending"}
+                  onChange={(e) => setPaymentStatus(e.target.value)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">Pending</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="paymentStatus"
+                  value="paid"
+                  checked={paymentStatus === "paid"}
+                  onChange={(e) => setPaymentStatus(e.target.value)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">Paid</span>
+              </label>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-8 flex justify-end gap-4">
+      <div className="mt-8 pt-4 border-t border-gray-100 flex justify-end gap-4 shrink-0">
         <Button variant="secondary" size="md" onClick={handleReset}>
           Reset
         </Button>
@@ -229,4 +246,3 @@ function PatientRegistrationForm({ onRegister, lastTokenNo }: PatientRegistratio
 }
 
 export default PatientRegistrationForm;
-

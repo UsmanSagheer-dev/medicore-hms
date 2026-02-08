@@ -2,22 +2,40 @@
 import { LogOut, Settings, User } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Button from "../ui/Button";
+import { useAppDispatch } from "@/redux/hooks";
+import { logout } from "@/redux/slices/authSlice";
 
 const Header = () => {
   const pathname = usePathname();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Determine user role based on pathname
+  const handleLogout = () => {
+    dispatch(logout());
+    setIsDropdownOpen(false);
+    router.push("/auth/login");
+  };
+
   const isDoctor = pathname?.includes("/dashboard/doctor");
-  const isReception = pathname?.includes("/dashboard/reception");
+  const isReception = pathname?.includes("/dashboard/receptionist");
+  const isAdmin = pathname?.includes("/dashboard/admin");
 
   const userInfo = {
-    name: isDoctor ? "Dr. Usman Sagheer" : "Usman Sagheer",
-    role: isDoctor ? "Hospital Doctor" : "Receptionist",
-    initials: isDoctor ? "DS" : "US"
+    name: isDoctor
+      ? "Dr. Usman Sagheer"
+      : isAdmin
+        ? "Admin Control"
+        : "Usman Sagheer",
+    role: isDoctor
+      ? "Hospital Doctor"
+      : isAdmin
+        ? "System Admin"
+        : "Receptionist",
+    initials: isAdmin ? "AD" : isDoctor ? "DS" : "US",
   };
 
   useEffect(() => {
@@ -88,7 +106,9 @@ const Header = () => {
         {isDropdownOpen && (
           <div className="absolute right-0 top-14 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50 animate-in fade-in zoom-in duration-200 origin-top-right">
             <div className="px-4 py-2 border-b border-gray-50 mb-1">
-              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">User Menu</p>
+              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">
+                User Menu
+              </p>
             </div>
             <Button
               variant="ghost"
@@ -112,13 +132,12 @@ const Header = () => {
             </Button>
             <div className="h-px bg-gray-100 my-2 mx-2"></div>
             <Button
+              type="button"
               variant="ghost"
               className="w-full justify-start px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-all rounded-xl"
-              onClick={() => setIsDropdownOpen(false)}
+              onClick={handleLogout}
             >
-              <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
-                <LogOut size={16} className="text-red-500" />
-              </div>
+              <LogOut size={16} className="text-red-500" />
               <span className="font-bold">Logout</span>
             </Button>
           </div>

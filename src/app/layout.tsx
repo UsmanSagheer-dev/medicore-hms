@@ -16,6 +16,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+import { ReduxProvider } from "@/redux/provider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,9 +31,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 h-screen flex flex-col overflow-hidden`}
       >
-        {!isAuthPage && <Header />}
-        <main className="flex-1 overflow-hidden p-4 sm:p-6">{children}</main>
-        <Toaster position="top-right" />
+        <ReduxProvider>
+          {!isAuthPage && <Header />}
+          <main className="flex-1 overflow-hidden p-4 sm:p-6">{children}</main>
+          <Toaster position="top-right" />
+        </ReduxProvider>
       </body>
     </html>
   );

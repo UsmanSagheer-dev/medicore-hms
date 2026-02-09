@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import api from '@/lib/axios';
 
 interface AuthState {
   user: any | null;
@@ -8,10 +9,17 @@ interface AuthState {
   error: string | null;
 }
 
+const getInitialToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('token');
+  }
+  return null;
+};
+
 const initialState: AuthState = {
   user: null,
-  token: null,
-  isAuthenticated: false,
+  token: getInitialToken(),
+  isAuthenticated: !!getInitialToken(),
   loading: false,
   error: null,
 };
@@ -22,23 +30,10 @@ export const registerUser = createAsyncThunk(
   async (userData: any, { rejectWithValue }) => {
     try {
       console.log('Registering with:', userData);
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        return rejectWithValue(data.error || 'Registration failed');
-      }
-
-      return data; // { user, token, success }
+      const response = await api.post('/auth/register', userData);
+      return response.data; // { user, token, success }
     } catch (error: any) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.response?.data?.error || error.message);
     }
   }
 );
@@ -47,21 +42,10 @@ export const loginUser =createAsyncThunk(
   'auth/loginUser',
   async(userData:any , {rejectWithValue})=>{
     try{
-      const response = await fetch('http://localhost:5000/api/auth/login',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(userData)
-      })
-
-      const data = await response.json();
-
-      if(!response.ok){
-        return rejectWithValue(data.error || 'Login failed')
-      }
-
-      return data;  
+      const response = await api.post('/auth/login', userData);
+      return response.data;  
     }catch(error:any){
-      return rejectWithValue(error.message)
+      return rejectWithValue(error.response?.data?.error || error.message)
     }
   }
 )
@@ -83,6 +67,9 @@ export const authSlice = createSlice({
       state.token = null;
       state.isAuthenticated = false;
       state.error = null;
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
     },
     clearError: (state) => {
       state.error = null;
@@ -100,6 +87,9 @@ export const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.token = action.payload.token;
+        if (typeof window !== 'undefined' && action.payload.token) {
+          localStorage.setItem('token', action.payload.token);
+        }
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
@@ -115,6 +105,9 @@ export const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.token = action.payload.token;
+        if (typeof window !== 'undefined' && action.payload.token) {
+          localStorage.setItem('token', action.payload.token);
+        }
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;

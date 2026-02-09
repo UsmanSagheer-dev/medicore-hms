@@ -21,14 +21,21 @@ function Signup() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'RECEPTIONIST' as 'ADMIN' | 'DOCTOR' | 'RECEPTIONIST',
+    role: 'ADMIN' as 'ADMIN' | 'DOCTOR' | 'RECEPTIONIST',
   });
 
   useEffect(() => {
     if (isAuthenticated && user) {
       const role = user.role?.toLowerCase();
       if (role) {
-        router.push(`/dashboard/${role}`);
+        // Redirect to onboarding instead of dashboard
+        if (role === 'admin') {
+          router.push('/dashboard/admin');
+        } else if (role === 'receptionist') {
+          router.push('/onboarding/reception');
+        } else {
+          router.push(`/onboarding/${role}`);
+        }
         toast.success(`Welcome ${user.name}`);
       }
     }
@@ -104,9 +111,9 @@ function Signup() {
             value={formData.role}
             onChange={handleChange}
             options={[
+              { label: 'Admin', value: 'ADMIN' },
               { label: 'Doctor', value: 'DOCTOR' },
               { label: 'Receptionist', value: 'RECEPTIONIST' },
-              { label: 'Admin', value: 'ADMIN' },
             ]}
             required
             className='bg-white/5 border-white/10 text-white h-11 rounded-xl focus:ring-2 focus:ring-blue-500/50'

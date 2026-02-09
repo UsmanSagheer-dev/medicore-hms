@@ -25,6 +25,7 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
   const isAuthPage = pathname?.startsWith("/auth");
+  const isOnboardingPage = pathname?.startsWith("/onboarding");
 
   return (
     <html lang="en">
@@ -32,8 +33,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 h-screen flex flex-col overflow-hidden`}
       >
         <ReduxProvider>
-          {!isAuthPage && <Header />}
-          <main className="flex-1 overflow-hidden p-4 sm:p-6">{children}</main>
+          {!isAuthPage && !isOnboardingPage && <Header />}
+          <main className="flex-1 overflow-hidden ">{children}</main>
           <Toaster position="top-right" />
         </ReduxProvider>
       </body>

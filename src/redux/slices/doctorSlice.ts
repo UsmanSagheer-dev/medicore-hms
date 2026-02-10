@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/lib/axios";
 
 interface DoctorProfile {
-  _id: string;
+  _id?: string;
   full_name: string;
   email: string;
   phone: string;

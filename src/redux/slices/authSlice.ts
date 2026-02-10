@@ -69,6 +69,8 @@ export const authSlice = createSlice({
       state.error = null;
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
+        document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie = "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       }
     },
     clearError: (state) => {
@@ -89,6 +91,11 @@ export const authSlice = createSlice({
         state.token = action.payload.token;
         if (typeof window !== 'undefined' && action.payload.token) {
           localStorage.setItem('token', action.payload.token);
+          // Set cookies for middleware access
+          document.cookie = `token=${action.payload.token}; path=/; max-age=86400; SameSite=Lax`;
+          if (action.payload.user?.role) {
+            document.cookie = `userRole=${action.payload.user.role.toLowerCase()}; path=/; max-age=86400; SameSite=Lax`;
+          }
         }
       })
       .addCase(registerUser.rejected, (state, action) => {
@@ -107,6 +114,11 @@ export const authSlice = createSlice({
         state.token = action.payload.token;
         if (typeof window !== 'undefined' && action.payload.token) {
           localStorage.setItem('token', action.payload.token);
+          // Set cookies for middleware access
+          document.cookie = `token=${action.payload.token}; path=/; max-age=86400; SameSite=Lax`;
+          if (action.payload.user?.role) {
+            document.cookie = `userRole=${action.payload.user.role.toLowerCase()}; path=/; max-age=86400; SameSite=Lax`;
+          }
         }
       })
       .addCase(loginUser.rejected, (state, action) => {

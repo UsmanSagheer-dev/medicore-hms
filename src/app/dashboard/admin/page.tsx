@@ -14,11 +14,28 @@ import {
   ShieldCheck,
   Stethoscope,
   Briefcase,
+  Eye,
+  X,
+  Calendar,
+  MapPin,
+  CreditCard,
+  Clock,
+  Phone,
+  Mail,
+  Award,
+  BookOpen,
+  ArrowLeft,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
+import toast from "react-hot-toast";
+import { approveDoctorRequest, rejectDoctorRequest } from "@/redux/slices/doctorSlice";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("requests");
+  const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   // Mock data for initial UI
   const stats = [
@@ -98,12 +115,42 @@ const AdminDashboard = () => {
 
   const requests = Array.isArray(pendingRequests) ? pendingRequests : [];
 
-  const handleApprove = (id: any) => {};
+  const handleApprove = async (id: string) => {
+    try {
+      await dispatch(approveDoctorRequest(id)).unwrap();
+      toast.success("Doctor approved successfully!");
+      setIsModalOpen(false);
+      setSelectedDoctor(null);
+    } catch (err) {
+      toast.error(err as string || "Approval failed");
+    }
+  };
 
-  const handleReject = (id: any) => {};
+  const handleReject = async () => {
+    if (!rejectionReason.trim()) {
+      toast.error("Please provide a reason for rejection");
+      return;
+    }
+    try {
+      const id = selectedDoctor._id || selectedDoctor.id;
+      await dispatch(rejectDoctorRequest({ doctorId: id, rejectionReason })).unwrap();
+      toast.success("Doctor request rejected.");
+      setIsRejectModalOpen(false);
+      setIsModalOpen(false);
+      setSelectedDoctor(null);
+      setRejectionReason("");
+    } catch (err) {
+      toast.error(err as string || "Rejection failed");
+    }
+  };
+
+  const openDetails = (doctor: any) => {
+    setSelectedDoctor(doctor);
+    setIsModalOpen(true);
+  };
 
   return (
-    <div className="h-full flex flex-col space-y-6">
+    <div className="h-full flex flex-col space-y-6 p-4">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -259,20 +306,12 @@ const AdminDashboard = () => {
                       </p>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleApprove(req._id || req.id)}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1.5"
-                        >
-                          <ShieldCheck size={14} /> Approve
-                        </button>
-                        <button
-                          onClick={() => handleReject(req._id || req.id)}
-                          className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-bold transition-all border border-red-100"
-                        >
-                          Reject
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => openDetails(req)}
+                        className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ml-auto border border-blue-100 active:scale-95"
+                      >
+                        <Eye size={14} /> View Details
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -375,8 +414,180 @@ const AdminDashboard = () => {
           )}
         </div>
       </div>
+      {/* Doctor Details Modal */}
+      {isModalOpen && selectedDoctor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-200">
+                  {selectedDoctor.full_name?.charAt(0) || "D"}
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-gray-900 leading-tight">
+                    {selectedDoctor.full_name}
+                  </h2>
+                  <p className="text-sm font-bold text-blue-600">
+                    {selectedDoctor.specialization} • {selectedDoctor.years_of_experience} Experience
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-xl text-gray-400 transition-all hover:rotate-90"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                {/* Personal & Professional Info */}
+                <div className="space-y-8">
+                  <section>
+                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <BookOpen size={14} className="text-blue-500" /> Professional Credentials
+                    </h3>
+                    <div className="grid gap-4">
+                      <DetailItem label="Registration #" value={selectedDoctor.registration_number} />
+                      <DetailItem label="Authority" value={selectedDoctor.registration_authority} />
+                      <DetailItem label="Qualifications" value={selectedDoctor.qualifications} />
+                      <DetailItem label="Medical College" value={selectedDoctor.medical_college} />
+                      <DetailItem label="Passing Year" value={selectedDoctor.passing_year} />
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <Phone size={14} className="text-emerald-500" /> Contact Information
+                    </h3>
+                    <div className="grid gap-4">
+                      <DetailItem label="Email Address" value={selectedDoctor.email} icon={<Mail size={14} />} />
+                      <DetailItem label="Phone Number" value={selectedDoctor.phone} icon={<Phone size={14} />} />
+                      <DetailItem label="CNIC Number" value={selectedDoctor.cnic_number} />
+                    </div>
+                  </section>
+                </div>
+
+                {/* Clinic & Financial Info */}
+                <div className="space-y-8">
+                  <section>
+                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <MapPin size={14} className="text-amber-500" /> Clinic Details
+                    </h3>
+                    <div className="grid gap-4">
+                      <DetailItem label="Clinic Name" value={selectedDoctor.clinic_name} />
+                      <DetailItem label="City" value={selectedDoctor.clinic_city} />
+                      <DetailItem label="Address" value={selectedDoctor.clinic_address} />
+                      <DetailItem label="Room #" value={selectedDoctor.room_number} />
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <CreditCard size={14} className="text-purple-500" /> Fees & Schedule
+                    </h3>
+                    <div className="grid gap-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <DetailItem label="Consultation" value={`Rs. ${selectedDoctor.consultation_fee}`} />
+                        <DetailItem label="Follow-up" value={`Rs. ${selectedDoctor.followup_fee}`} />
+                      </div>
+                      <DetailItem 
+                        label="Working Days" 
+                        value={Array.isArray(selectedDoctor.working_days) ? selectedDoctor.working_days.join(", ") : selectedDoctor.working_days} 
+                      />
+                      <DetailItem 
+                        label="Shift Hours" 
+                        value={`${selectedDoctor.start_time} - ${selectedDoctor.end_time}`} 
+                        icon={<Clock size={14} />}
+                      />
+                    </div>
+                  </section>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="flex items-center gap-2 px-6 py-3 text-gray-600 font-bold hover:bg-gray-100 rounded-2xl transition-all active:scale-95"
+              >
+                <ArrowLeft size={18} /> Back to List
+              </button>
+              
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <button
+                  onClick={() => setIsRejectModalOpen(true)}
+                  disabled={loading}
+                  className="flex-1 sm:flex-none px-8 py-3 bg-white text-red-600 border-2 border-red-100 font-bold rounded-2xl hover:bg-red-50 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  Reject Request
+                </button>
+                <button
+                  onClick={() => handleApprove(selectedDoctor._id || selectedDoctor.id)}
+                  disabled={loading}
+                  className="flex-1 sm:flex-none px-10 py-3 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                   {loading ? "Processing..." : <><ShieldCheck size={18} /> Approve Doctor</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rejection Reason Modal */}
+      {isRejectModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-200 border border-gray-100">
+            <h3 className="text-xl font-black text-gray-900 mb-2">Rejection Reason</h3>
+            <p className="text-sm text-gray-500 font-medium mb-4">
+              Please explain why this request is being rejected. This feedback will be sent to the doctor.
+            </p>
+            
+            <textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="e.g. Invalid registration documents or incomplete profile..."
+              className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all resize-none mb-6 font-medium text-gray-700"
+            />
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsRejectModalOpen(false)}
+                className="flex-1 px-6 py-3 text-gray-500 font-bold hover:bg-gray-100 rounded-2xl transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReject}
+                disabled={loading}
+                className="flex-[2] px-6 py-3 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 shadow-lg shadow-red-200 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loading ? "Processing..." : "Confirm Rejection"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+// Helper component for detail items
+const DetailItem = ({ label, value, icon }: { label: string; value: any; icon?: any }) => (
+  <div className="group">
+    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mb-1 select-none">
+      {label}
+    </p>
+    <div className="flex items-center gap-2 bg-gray-50 px-3 py-2.5 rounded-xl border border-transparent group-hover:border-gray-200 group-hover:bg-white transition-all">
+      {icon && <span className="text-gray-400">{icon}</span>}
+      <p className="text-sm font-bold text-gray-800 break-all">{value || "Not provided"}</p>
+    </div>
+  </div>
+);
 
 export default AdminDashboard;

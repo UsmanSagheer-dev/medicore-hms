@@ -1,7 +1,8 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import api from '@/lib/axios';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import api from "@/lib/axios";
 
 interface DoctorProfile {
+  _id: string;
   full_name: string;
   email: string;
   phone: string;
@@ -48,35 +49,70 @@ const initialState: DoctorState = {
 };
 
 export const updateDoctorProfile = createAsyncThunk(
-  'doctor/updateProfile',
+  "doctor/updateProfile",
   async (profileData: DoctorProfile, { rejectWithValue }) => {
     try {
-      console.log('Sending doctor profile data:', profileData);
+      console.log("Sending doctor profile data:", profileData);
 
-      const response = await api.post('/doctor/onboarding/submit', profileData);
+      const response = await api.post("/doctor/onboarding/submit", profileData);
 
       return response.data;
     } catch (error: any) {
-      console.error('Submission failed:', error.response?.data || error.message);
+      console.error(
+        "Submission failed:",
+        error.response?.data || error.message,
+      );
       return rejectWithValue(error.response?.data?.error || error.message);
     }
-  }
+  },
 );
 
-export const pendingDoctorRequests =createAsyncThunk(
-  'doctor/pendingRequests',
-  async(_ , {rejectWithValue})=>{
-    try{
-      const response = await api.get('/doctor/onboarding/pending');
+export const pendingDoctorRequests = createAsyncThunk(
+  "doctor/pendingRequests",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get("/doctor/onboarding/pending");
       return response.data;
-    }catch(error:any){
+    } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
     }
-  }
-)
+  },
+);
+
+export const approveDoctorRequest = createAsyncThunk(
+  "doctor/approveRequest",
+  async (doctorId: string, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/doctor/onboarding/${doctorId}/approve`);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  },
+);
+
+export const rejectDoctorRequest = createAsyncThunk(
+  "doctor/rejectRequest",
+  async (
+    {
+      doctorId,
+      rejectionReason,
+    }: { doctorId: string; rejectionReason: string },
+    { rejectWithValue },
+  ) => {
+    try {
+      const response = await api.post(`/doctor/onboarding/${doctorId}/reject`, {
+        rejectionReason,
+      });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  },
+);
 
 export const doctorSlice = createSlice({
-  name: 'doctor',
+  name: "doctor",
   initialState,
   reducers: {
     resetDoctorState: (state) => {
@@ -111,10 +147,45 @@ export const doctorSlice = createSlice({
         state.loading = false;
         state.success = true;
         // Backend typically returns { success: true, profile: [...] } or just the array
-        const data = action.payload.profile || action.payload.data || action.payload;
+        const data =
+          action.payload.profile || action.payload.data || action.payload;
         state.pendingRequests = Array.isArray(data) ? data : [];
       })
       .addCase(pendingDoctorRequests.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        state.success = false;
+      })
+      .addCase(approveDoctorRequest.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(approveDoctorRequest.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.pendingRequests = state.pendingRequests.filter(
+          (doctor) => doctor._id !== action.meta.arg,
+        );
+      })
+      .addCase(approveDoctorRequest.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        state.success = false;
+      })
+      .addCase(rejectDoctorRequest.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(rejectDoctorRequest.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.pendingRequests = state.pendingRequests.filter(
+          (doctor) => doctor._id !== action.meta.arg.doctorId,
+        );
+      })
+      .addCase(rejectDoctorRequest.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
         state.success = false;

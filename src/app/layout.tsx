@@ -1,6 +1,8 @@
-import type { Metadata } from "next";
+"use client";
+
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
+import { usePathname } from "next/navigation";
 import Header from "@/components/layout/Header";
 import "./globals.css";
 
@@ -14,24 +16,27 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Medicore HMS",
-  description: "MediCore Hospital & Research Center",
-};
+import { ReduxProvider } from "@/redux/provider";
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const isAuthPage = pathname?.startsWith("/auth");
+  const isOnboardingPage = pathname?.startsWith("/onboarding");
+
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 h-screen flex flex-col overflow-hidden`}
       >
-        <Header />
-        <main className="p-4">{children}</main>
-        <Toaster position="top-right" />
+        <ReduxProvider>
+          {!isAuthPage && !isOnboardingPage && <Header />}
+          <main className="flex-1 overflow-hidden ">{children}</main>
+          <Toaster position="top-right" />
+        </ReduxProvider>
       </body>
     </html>
   );

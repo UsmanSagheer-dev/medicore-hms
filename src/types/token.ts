@@ -13,4 +13,5 @@ export interface TokenData {
   fee: string;
   isPaid: boolean;
   type?: string;
+  visitType: "New" | "Follow up" | "Revisit";
 }

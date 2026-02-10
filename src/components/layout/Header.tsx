@@ -2,9 +2,41 @@
 import { LogOut, Settings, User } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
+import { usePathname, useRouter } from "next/navigation";
+import Button from "../ui/Button";
+import { useAppDispatch } from "@/redux/hooks";
+import { logout } from "@/redux/slices/authSlice";
+
 const Header = () => {
+  const pathname = usePathname();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    setIsDropdownOpen(false);
+    router.push("/auth/login");
+  };
+
+  const isDoctor = pathname?.includes("/dashboard/doctor");
+  const isReception = pathname?.includes("/dashboard/receptionist");
+  const isAdmin = pathname?.includes("/dashboard/admin");
+
+  const userInfo = {
+    name: isDoctor
+      ? "Dr. Usman Sagheer"
+      : isAdmin
+        ? "Admin Control"
+        : "Usman Sagheer",
+    role: isDoctor
+      ? "Hospital Doctor"
+      : isAdmin
+        ? "System Admin"
+        : "Receptionist",
+    initials: isAdmin ? "AD" : isDoctor ? "DS" : "US",
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -26,7 +58,7 @@ const Header = () => {
   }, [isDropdownOpen]);
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-sm font-sans">
+    <header className="h-[70px] bg-white border-b border-gray-200 px-6 flex items-center justify-between sticky top-0 z-50 shadow-sm font-sans shrink-0">
       <div className="flex items-center gap-4">
         <div className="bg-blue-600 p-2 rounded-lg">
           <svg
@@ -48,7 +80,7 @@ const Header = () => {
           <h1 className="text-xl font-bold text-gray-900 leading-tight">
             Medicore HMS
           </h1>
-          <p className="text-xs text-gray-500 font-medium">
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
             MediCore Hospital & Research Center
           </p>
         </div>
@@ -56,43 +88,58 @@ const Header = () => {
 
       <div className="flex items-center gap-6 relative" ref={dropdownRef}>
         <div className="hidden md:flex flex-col items-end">
-          <span className="text-sm font-semibold text-gray-700">
-            Usman Sagheer
+          <span className="text-sm font-bold text-gray-800">
+            {userInfo.name}
           </span>
-          <span className="text-xs text-blue-600">Receptionist</span>
+          <span className="text-[10px] font-black uppercase text-blue-600 tracking-tighter">
+            {userInfo.role}
+          </span>
         </div>
 
-        <button
+        <Button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border-2 border-white shadow-sm ring-1 ring-blue-50 transition-all hover:bg-blue-200 focus:outline-none"
+          className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold border-2 border-white shadow-sm ring-1 ring-blue-50 transition-all hover:bg-blue-200 focus:outline-none"
         >
-          US
-        </button>
+          {userInfo.initials}
+        </Button>
 
         {isDropdownOpen && (
-          <div className="absolute right-0 top-12 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in zoom-in duration-100 origin-top-right">
-            <button
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+          <div className="absolute right-0 top-14 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50 animate-in fade-in zoom-in duration-200 origin-top-right">
+            <div className="px-4 py-2 border-b border-gray-50 mb-1">
+              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">
+                User Menu
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              className="w-full justify-start px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-3 transition-all rounded-xl"
               onClick={() => setIsDropdownOpen(false)}
             >
-              <User size={16} className="text-gray-400" />
-              My Profile
-            </button>
-            <button
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+              <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center">
+                <User size={16} className="text-slate-400" />
+              </div>
+              <span className="font-semibold">My Profile</span>
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-3 transition-all rounded-xl"
               onClick={() => setIsDropdownOpen(false)}
             >
-              <Settings size={16} className="text-gray-400" />
-              Settings
-            </button>
-            <div className="h-px bg-gray-100 my-1"></div>
-            <button
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
-              onClick={() => setIsDropdownOpen(false)}
+              <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center">
+                <Settings size={16} className="text-slate-400" />
+              </div>
+              <span className="font-semibold">Settings</span>
+            </Button>
+            <div className="h-px bg-gray-100 my-2 mx-2"></div>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full justify-start px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-all rounded-xl"
+              onClick={handleLogout}
             >
-              <LogOut size={16} />
-              Logout
-            </button>
+              <LogOut size={16} className="text-red-500" />
+              <span className="font-bold">Logout</span>
+            </Button>
           </div>
         )}
       </div>

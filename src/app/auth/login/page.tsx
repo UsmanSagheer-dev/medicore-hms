@@ -23,16 +23,18 @@ function Login() {
     password:''
   })
 
-  useEffect(()=>{
-    if(isAuthenticated && user){
+  useEffect(() => {
+    if (isAuthenticated && user) {
       const role = user.role?.toLowerCase();
-      if(role){
-        router.push(`/dashboard/${role}`)
+      if (role==='doctor') {
+        window.location.href = `/dashboard/doctor/${user.id}`;
+        toast.success(`Welcome ${user.name}`);
+      }else{
+        window.location.href = `/dashboard/${role}`;
         toast.success(`Welcome ${user.name}`);
       }
     }
-
-  },[isAuthenticated,user,router])
+  }, [isAuthenticated, user]);
 
   useEffect(()=>{
     if(error){

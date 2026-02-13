@@ -146,10 +146,10 @@ export const doctorSlice = createSlice({
       .addCase(pendingDoctorRequests.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        // Backend typically returns { success: true, profile: [...] } or just the array
         const data =
           action.payload.profile || action.payload.data || action.payload;
         state.pendingRequests = Array.isArray(data) ? data : [];
+        console.log("Pending requests:", state.pendingRequests);
       })
       .addCase(pendingDoctorRequests.rejected, (state, action) => {
         state.loading = false;

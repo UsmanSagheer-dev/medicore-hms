@@ -23,16 +23,23 @@ function Login() {
     password:''
   })
 
-  useEffect(()=>{
-    if(isAuthenticated && user){
+  useEffect(() => {
+    if (isAuthenticated && user) {
       const role = user.role?.toLowerCase();
-      if(role){
-        router.push(`/dashboard/${role}`)
+      if (role === 'doctor') {
+        // Only redirect to dashboard if they have a doctor ID (meaning they are approved)
+        if (user.doctorId || user.id) {
+          window.location.href = `/dashboard/doctor/${user.doctorId || user.id}`;
+          toast.success(`Welcome ${user.name}`);
+        } else {
+          router.push("/onboarding/doctor/pending");
+        }
+      } else {
+        window.location.href = `/dashboard/${role}`;
         toast.success(`Welcome ${user.name}`);
       }
     }
-
-  },[isAuthenticated,user,router])
+  }, [isAuthenticated, user]);
 
   useEffect(()=>{
     if(error){

@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Button from "../ui/Button";
 import { useAppDispatch } from "@/redux/hooks";
-import { logout } from "@/redux/slices/authSlice";
+import { logout, logoutUser } from "@/redux/slices/authSlice";
 
 const Header = () => {
   const pathname = usePathname();
@@ -15,7 +15,7 @@ const Header = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => {
-    dispatch(logout());
+    dispatch(logoutUser());
     setIsDropdownOpen(false);
     router.push("/auth/login");
   };

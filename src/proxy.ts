@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function proxy(request: NextRequest) {
-  const token = request.cookies.get("token")?.value;
+  const token = request.cookies.get("authToken")?.value;
   const userRole = request.cookies.get("userRole")?.value;
   const pathname = request.nextUrl.pathname;
 
@@ -22,7 +22,7 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
 
-    if (pathname.startsWith("/dashboard/doctor") && userRole !== "doctor") {
+    if (pathname.startsWith("/dashboard/doctor/") && userRole !== "doctor") {
       return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
 

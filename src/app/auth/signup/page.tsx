@@ -49,7 +49,10 @@ function Signup() {
     if (error) {
       toast.error(error);
     }
-  }, [error]);
+    return()=>{
+      dispatch(clearError());
+    }
+  }, [error,dispatch]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;

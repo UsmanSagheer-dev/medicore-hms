@@ -7,9 +7,20 @@ import {
   ArrowLeft,
   Mail,
 } from "lucide-react";
-import Link from "next/link";
+import { useDispatch } from "react-redux";
+import { useRouter } from "next/navigation";
+import { logoutUser } from "@/redux/slices/authSlice";
+import { AppDispatch } from "@/redux/store";
 
 export default function PendingApproval() {
+  const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
+    router.push("/auth/login");
+  };
+
   return (
     <div className=" flex items-center justify-center">
       <div className="w-full max-w-2xl bg-white border border-gray-200 p-12 rounded-3xl shadow-xl text-center relative overflow-hidden">
@@ -66,13 +77,13 @@ export default function PendingApproval() {
             </p>
           </div>
 
-          <Link
-            href="/"
+          <button
+            onClick={handleLogout}
             className="inline-flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors font-semibold group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            Back to Homepage
-          </Link>
+            Back to Login
+          </button>
         </div>
       </div>
     </div>

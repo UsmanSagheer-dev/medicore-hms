@@ -14,7 +14,7 @@ export async function proxy(request: NextRequest) {
 
   if (token) {
     if (isAuthRoute) {
-      const dashboardPath = userRole ? `/dashboard/${userRole}` : "/";
+      const dashboardPath = userRole ? `/dashboard/${userRole}` : "/auth/login";
       return NextResponse.redirect(new URL(dashboardPath, request.url));
     }
 

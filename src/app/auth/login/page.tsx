@@ -8,7 +8,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { loginUser } from "@/redux/slices/authSlice";
+import { loginUser, clearError } from "@/redux/slices/authSlice";
 
 import Button from "@/components/ui/Button";
 
@@ -27,12 +27,20 @@ function Login() {
     if (isAuthenticated && user) {
       const role = user.role?.toLowerCase();
       if (role === 'doctor') {
-        // Only redirect to dashboard if they have a doctor ID (meaning they are approved)
         if (user.doctorId || user.id) {
           window.location.href = `/dashboard/doctor/${user.doctorId || user.id}`;
           toast.success(`Welcome ${user.name}`);
         } else {
           router.push("/onboarding/doctor/pending");
+          dispatch(clearError());
+        }
+      } else if (role === 'receptionist') {
+        if (user.receptionistId || user.id) {
+          window.location.href = `/dashboard/${role}`;
+          toast.success(`Welcome ${user.name}`);
+        } else {
+          router.push("/onboarding/receptionist/pending");
+          dispatch(clearError());
         }
       } else {
         window.location.href = `/dashboard/${role}`;
@@ -45,7 +53,10 @@ function Login() {
     if(error){
       toast.error(error);
     }
-  },[error])
+    return () => {
+      dispatch(clearError());
+    }
+  },[error, dispatch])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

@@ -16,28 +16,36 @@ import {
   Briefcase,
   Eye,
   X,
-  Calendar,
   MapPin,
   CreditCard,
   Clock,
   Phone,
   Mail,
-  Award,
   BookOpen,
   ArrowLeft,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import toast from "react-hot-toast";
-import { approveDoctorRequest, rejectDoctorRequest } from "@/redux/slices/doctorSlice";
+import {
+  approveDoctorRequest,
+  rejectDoctorRequest,
+} from "@/redux/slices/doctorSlice";
+import {
+  pendingReceptionistRequests,
+  approveReceptionistRequest,
+  rejectReceptionistRequest,
+} from "@/redux/slices/receptionistSlice";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("requests");
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
+  const [selectedRequestType, setSelectedRequestType] = useState<
+    "doctor" | "receptionist"
+  >("doctor");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
 
-  // Mock data for initial UI
   const stats = [
     {
       label: "Total Doctors",
@@ -108,21 +116,56 @@ const AdminDashboard = () => {
   const { pendingRequests, loading, error } = useSelector(
     (state: RootState) => state.doctor,
   );
+  const {
+    pendingRequests: receptionistPendingRequests,
+    loading: receptionistLoading,
+  } = useSelector((state: RootState) => state.receptionist);
 
   useEffect(() => {
     dispatch(pendingDoctorRequests());
+    console.log("🔄 Dispatching pendingDoctorRequests");
+  }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(pendingReceptionistRequests());
+    console.log("🔄 Dispatching pendingReceptionistRequests");
   }, [dispatch]);
 
   const requests = Array.isArray(pendingRequests) ? pendingRequests : [];
+  const receptionistRequests = Array.isArray(receptionistPendingRequests)
+    ? receptionistPendingRequests
+    : [];
+
+  console.log("👨‍⚕️ Doctor Requests:", requests);
+  console.log("📝 Receptionist Requests:", receptionistRequests);
 
   const handleApprove = async (id: string) => {
     try {
-      await dispatch(approveDoctorRequest(id)).unwrap();
-      toast.success("Doctor approved successfully!");
+      console.log(
+        "🔄 handleApprove called with ID:",
+        id,
+        "Type:",
+        selectedRequestType,
+      );
+      console.log("📋 Full selectedDoctor object:", selectedDoctor);
+
+      if (!id) {
+        toast.error("Request ID is missing");
+        return;
+      }
+
+      if (selectedRequestType === "doctor") {
+        await dispatch(approveDoctorRequest(id)).unwrap();
+        toast.success("Doctor approved successfully!");
+      } else {
+        await dispatch(approveReceptionistRequest(id)).unwrap();
+        toast.success("Receptionist approved successfully!");
+      }
       setIsModalOpen(false);
       setSelectedDoctor(null);
-    } catch (err) {
-      toast.error(err as string || "Approval failed");
+    } catch (err: any) {
+      console.error("❌ Approval error:", err);
+      toast.error(err?.message || (err as string) || "Approval failed");
     }
   };
 
@@ -132,15 +175,39 @@ const AdminDashboard = () => {
       return;
     }
     try {
-      const id = selectedDoctor._id || selectedDoctor.id;
-      await dispatch(rejectDoctorRequest({ doctorId: id, rejectionReason })).unwrap();
-      toast.success("Doctor request rejected.");
+      const id = selectedDoctor?.id;
+      console.log(
+        "🔄 handleReject called with ID:",
+        id,
+        "Type:",
+        selectedRequestType,
+        "Reason:",
+        rejectionReason,
+      );
+
+      if (!id) {
+        toast.error("Request ID is missing");
+        return;
+      }
+
+      if (selectedRequestType === "doctor") {
+        await dispatch(
+          rejectDoctorRequest({ doctorId: id, rejectionReason }),
+        ).unwrap();
+        toast.success("Doctor request rejected.");
+      } else {
+        await dispatch(
+          rejectReceptionistRequest({ receptionistId: id, rejectionReason }),
+        ).unwrap();
+        toast.success("Receptionist request rejected.");
+      }
       setIsRejectModalOpen(false);
       setIsModalOpen(false);
       setSelectedDoctor(null);
       setRejectionReason("");
-    } catch (err) {
-      toast.error(err as string || "Rejection failed");
+    } catch (err: any) {
+      console.error("❌ Rejection error:", err);
+      toast.error(err?.message || (err as string) || "Rejection failed");
     }
   };
 
@@ -218,13 +285,30 @@ const AdminDashboard = () => {
             <h2 className="text-lg font-bold text-gray-900">Hospital Staff</h2>
             <div className="flex bg-gray-100 p-1 rounded-lg">
               <button
-                onClick={() => setActiveTab("requests")}
-                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === "requests" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                onClick={() => {
+                  setActiveTab("requests");
+                  setSelectedRequestType("doctor");
+                }}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === "requests" && selectedRequestType === "doctor" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 Doctor Requests
                 {requests.length > 0 && (
                   <span className="ml-2 bg-blue-600 text-white px-1.5 py-0.5 rounded-full text-[8px]">
                     {requests.length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("requests");
+                  setSelectedRequestType("receptionist");
+                }}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === "requests" && selectedRequestType === "receptionist" ? "bg-white text-purple-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Receptionist Requests
+                {receptionistRequests.length > 0 && (
+                  <span className="ml-2 bg-purple-600 text-white px-1.5 py-0.5 rounded-full text-[8px]">
+                    {receptionistRequests.length}
                   </span>
                 )}
               </button>
@@ -260,22 +344,36 @@ const AdminDashboard = () => {
             <table className="w-full text-left border-collapse">
               <thead className="bg-gray-50 text-[10px] uppercase font-bold text-gray-500 tracking-widest sticky top-0 z-10">
                 <tr>
-                  <th className="px-6 py-4">Doctor Information</th>
-                  <th className="px-6 py-4">Specialty & Exp.</th>
+                  <th className="px-6 py-4">
+                    {selectedRequestType === "doctor"
+                      ? "Doctor"
+                      : "Receptionist"}{" "}
+                    Information
+                  </th>
+                  <th className="px-6 py-4">
+                    {selectedRequestType === "doctor"
+                      ? "Specialty & Exp."
+                      : "Department & Exp."}
+                  </th>
                   <th className="px-6 py-4">Request Date</th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {requests.map((req: any) => (
+                {(selectedRequestType === "doctor"
+                  ? requests
+                  : receptionistRequests
+                ).map((req: any) => (
                   <tr
-                    key={req._id || req.id}
+                    key={req._id || req.id || req.cnic_number}
                     className="hover:bg-amber-50/30 transition-colors group"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-sm">
-                          {(req.full_name || req.name || "D")
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${selectedRequestType === "doctor" ? "bg-amber-100 text-amber-700" : "bg-purple-100 text-purple-700"}`}
+                        >
+                          {(req.full_name || req.name || "U")
                             .split(" ")
                             .map((n: string) => n[0])
                             .join("")}
@@ -292,10 +390,14 @@ const AdminDashboard = () => {
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm font-semibold text-gray-700">
-                        {req.specialization || req.specialty}
+                        {req.specialization ||
+                          req.specialty ||
+                          req.department ||
+                          "N/A"}
                       </p>
                       <p className="text-[10px] text-gray-400">
-                        {req.years_of_experience || req.experience} experience
+                        {req.years_of_experience || req.experience || "N/A"}{" "}
+                        experience
                       </p>
                     </td>
                     <td className="px-6 py-4">
@@ -307,7 +409,11 @@ const AdminDashboard = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
-                        onClick={() => openDetails(req)}
+                        onClick={() => {
+                          console.log("📋 Selected request data:", req);
+                          setSelectedDoctor(req);
+                          setIsModalOpen(true);
+                        }}
                         className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ml-auto border border-blue-100 active:scale-95"
                       >
                         <Eye size={14} /> View Details
@@ -315,7 +421,9 @@ const AdminDashboard = () => {
                     </td>
                   </tr>
                 ))}
-                {loading && (
+                {(selectedRequestType === "doctor"
+                  ? loading
+                  : receptionistLoading) && (
                   <tr>
                     <td
                       colSpan={4}
@@ -325,16 +433,22 @@ const AdminDashboard = () => {
                     </td>
                   </tr>
                 )}
-                {!loading && requests.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={4}
-                      className="px-6 py-12 text-center text-gray-500 italic"
-                    >
-                      No pending doctor requests at the moment.
-                    </td>
-                  </tr>
-                )}
+                {!(selectedRequestType === "doctor"
+                  ? loading
+                  : receptionistLoading) &&
+                  (selectedRequestType === "doctor"
+                    ? requests
+                    : receptionistRequests
+                  ).length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="px-6 py-12 text-center text-gray-500 italic"
+                      >
+                        No pending {selectedRequestType} requests at the moment.
+                      </td>
+                    </tr>
+                  )}
               </tbody>
             </table>
           ) : (
@@ -414,22 +528,28 @@ const AdminDashboard = () => {
           )}
         </div>
       </div>
-      {/* Doctor Details Modal */}
+      {/* Details Modal */}
       {isModalOpen && selectedDoctor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-200">
-                  {selectedDoctor.full_name?.charAt(0) || "D"}
+                <div
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg ${selectedRequestType === "doctor" ? "bg-blue-600 shadow-blue-200" : "bg-purple-600 shadow-purple-200"}`}
+                >
+                  {selectedDoctor.full_name?.charAt(0) || "U"}
                 </div>
                 <div>
                   <h2 className="text-xl font-black text-gray-900 leading-tight">
                     {selectedDoctor.full_name}
                   </h2>
-                  <p className="text-sm font-bold text-blue-600">
-                    {selectedDoctor.specialization} • {selectedDoctor.years_of_experience} Experience
+                  <p
+                    className={`text-sm font-bold ${selectedRequestType === "doctor" ? "text-blue-600" : "text-purple-600"}`}
+                  >
+                    {selectedRequestType === "doctor"
+                      ? `${selectedDoctor.specialization} • ${selectedDoctor.years_of_experience} Experience`
+                      : `${selectedDoctor.department || "N/A"} • ${selectedDoctor.years_of_experience || selectedDoctor.experience || "N/A"} Experience`}
                   </p>
                 </div>
               </div>
@@ -448,63 +568,230 @@ const AdminDashboard = () => {
                 <div className="space-y-8">
                   <section>
                     <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <BookOpen size={14} className="text-blue-500" /> Professional Credentials
+                      <BookOpen
+                        size={14}
+                        className={
+                          selectedRequestType === "doctor"
+                            ? "text-blue-500"
+                            : "text-purple-500"
+                        }
+                      />
+                      {selectedRequestType === "doctor"
+                        ? "Professional Credentials"
+                        : "Qualifications"}
                     </h3>
                     <div className="grid gap-4">
-                      <DetailItem label="Registration #" value={selectedDoctor.registration_number} />
-                      <DetailItem label="Authority" value={selectedDoctor.registration_authority} />
-                      <DetailItem label="Qualifications" value={selectedDoctor.qualifications} />
-                      <DetailItem label="Medical College" value={selectedDoctor.medical_college} />
-                      <DetailItem label="Passing Year" value={selectedDoctor.passing_year} />
+                      {selectedRequestType === "doctor" ? (
+                        <>
+                          <DetailItem
+                            label="Registration #"
+                            value={selectedDoctor.registration_number}
+                          />
+                          <DetailItem
+                            label="Authority"
+                            value={selectedDoctor.registration_authority}
+                          />
+                          <DetailItem
+                            label="Qualifications"
+                            value={selectedDoctor.qualifications}
+                          />
+                          <DetailItem
+                            label="Medical College"
+                            value={selectedDoctor.medical_college}
+                          />
+                          <DetailItem
+                            label="Passing Year"
+                            value={selectedDoctor.passing_year}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <DetailItem
+                            label="Highest Qualification"
+                            value={selectedDoctor.highest_qualification}
+                          />
+                          <DetailItem
+                            label="Qualification Field"
+                            value={selectedDoctor.qualification_field}
+                          />
+                          <DetailItem
+                            label="Years of Experience"
+                            value={selectedDoctor.years_of_experience}
+                          />
+                          <DetailItem
+                            label="Previous Employer"
+                            value={selectedDoctor.previous_employer}
+                          />
+                          <DetailItem
+                            label="Previous Designation"
+                            value={selectedDoctor.previous_designation}
+                          />
+                        </>
+                      )}
                     </div>
                   </section>
 
                   <section>
                     <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <Phone size={14} className="text-emerald-500" /> Contact Information
+                      <Phone size={14} className="text-emerald-500" /> Contact
+                      Information
                     </h3>
                     <div className="grid gap-4">
-                      <DetailItem label="Email Address" value={selectedDoctor.email} icon={<Mail size={14} />} />
-                      <DetailItem label="Phone Number" value={selectedDoctor.phone} icon={<Phone size={14} />} />
-                      <DetailItem label="CNIC Number" value={selectedDoctor.cnic_number} />
+                      <DetailItem
+                        label="Email Address"
+                        value={selectedDoctor.email}
+                        icon={<Mail size={14} />}
+                      />
+                      <DetailItem
+                        label="Phone Number"
+                        value={selectedDoctor.phone}
+                        icon={<Phone size={14} />}
+                      />
+                      <DetailItem
+                        label="CNIC Number"
+                        value={selectedDoctor.cnic_number}
+                      />
+                      {selectedRequestType === "receptionist" &&
+                        selectedDoctor.gender && (
+                          <DetailItem
+                            label="Gender"
+                            value={selectedDoctor.gender}
+                          />
+                        )}
+                      {selectedRequestType === "receptionist" &&
+                        selectedDoctor.date_of_birth && (
+                          <DetailItem
+                            label="Date of Birth"
+                            value={selectedDoctor.date_of_birth}
+                          />
+                        )}
                     </div>
                   </section>
                 </div>
 
-                {/* Clinic & Financial Info */}
+                {/* Additional Info */}
                 <div className="space-y-8">
-                  <section>
-                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <MapPin size={14} className="text-amber-500" /> Clinic Details
-                    </h3>
-                    <div className="grid gap-4">
-                      <DetailItem label="Clinic Name" value={selectedDoctor.clinic_name} />
-                      <DetailItem label="City" value={selectedDoctor.clinic_city} />
-                      <DetailItem label="Address" value={selectedDoctor.clinic_address} />
-                      <DetailItem label="Room #" value={selectedDoctor.room_number} />
-                    </div>
-                  </section>
+                  {selectedRequestType === "doctor" ? (
+                    <>
+                      <section>
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <MapPin size={14} className="text-amber-500" /> Clinic
+                          Details
+                        </h3>
+                        <div className="grid gap-4">
+                          <DetailItem
+                            label="Clinic Name"
+                            value={selectedDoctor.clinic_name}
+                          />
+                          <DetailItem
+                            label="City"
+                            value={selectedDoctor.clinic_city}
+                          />
+                          <DetailItem
+                            label="Address"
+                            value={selectedDoctor.clinic_address}
+                          />
+                          <DetailItem
+                            label="Room #"
+                            value={selectedDoctor.room_number}
+                          />
+                        </div>
+                      </section>
 
-                  <section>
-                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <CreditCard size={14} className="text-purple-500" /> Fees & Schedule
-                    </h3>
-                    <div className="grid gap-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <DetailItem label="Consultation" value={`Rs. ${selectedDoctor.consultation_fee}`} />
-                        <DetailItem label="Follow-up" value={`Rs. ${selectedDoctor.followup_fee}`} />
-                      </div>
-                      <DetailItem 
-                        label="Working Days" 
-                        value={Array.isArray(selectedDoctor.working_days) ? selectedDoctor.working_days.join(", ") : selectedDoctor.working_days} 
-                      />
-                      <DetailItem 
-                        label="Shift Hours" 
-                        value={`${selectedDoctor.start_time} - ${selectedDoctor.end_time}`} 
-                        icon={<Clock size={14} />}
-                      />
-                    </div>
-                  </section>
+                      <section>
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <CreditCard size={14} className="text-purple-500" />{" "}
+                          Fees & Schedule
+                        </h3>
+                        <div className="grid gap-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <DetailItem
+                              label="Consultation"
+                              value={`Rs. ${selectedDoctor.consultation_fee}`}
+                            />
+                            <DetailItem
+                              label="Follow-up"
+                              value={`Rs. ${selectedDoctor.followup_fee}`}
+                            />
+                          </div>
+                          <DetailItem
+                            label="Working Days"
+                            value={
+                              Array.isArray(selectedDoctor.working_days)
+                                ? selectedDoctor.working_days.join(", ")
+                                : selectedDoctor.working_days
+                            }
+                          />
+                          <DetailItem
+                            label="Shift Hours"
+                            value={`${selectedDoctor.start_time} - ${selectedDoctor.end_time}`}
+                            icon={<Clock size={14} />}
+                          />
+                        </div>
+                      </section>
+                    </>
+                  ) : (
+                    <>
+                      <section>
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <Briefcase size={14} className="text-amber-500" />{" "}
+                          Work Details
+                        </h3>
+                        <div className="grid gap-4">
+                          <DetailItem
+                            label="Department"
+                            value={selectedDoctor.department}
+                          />
+                          <DetailItem
+                            label="Shift Timing"
+                            value={
+                              selectedDoctor.shiftTiming ||
+                              selectedDoctor.preferred_shift
+                            }
+                          />
+                          <DetailItem
+                            label="City"
+                            value={selectedDoctor.city}
+                          />
+                          <DetailItem
+                            label="Address"
+                            value={selectedDoctor.address}
+                          />
+                        </div>
+                      </section>
+
+                      <section>
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <Users size={14} className="text-purple-500" />{" "}
+                          Preferences & Skills
+                        </h3>
+                        <div className="grid gap-4">
+                          <DetailItem
+                            label="Computer Proficiency"
+                            value={selectedDoctor.computer_proficiency}
+                          />
+                          <DetailItem
+                            label="Languages"
+                            value={selectedDoctor.languages}
+                          />
+                          <DetailItem
+                            label="Can Work Weekends"
+                            value={
+                              selectedDoctor.can_work_weekends ? "Yes" : "No"
+                            }
+                          />
+                          <DetailItem
+                            label="Availability Days"
+                            value={
+                              Array.isArray(selectedDoctor.availability_days)
+                                ? selectedDoctor.availability_days.join(", ")
+                                : selectedDoctor.availability_days || "N/A"
+                            }
+                          />
+                        </div>
+                      </section>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -517,7 +804,7 @@ const AdminDashboard = () => {
               >
                 <ArrowLeft size={18} /> Back to List
               </button>
-              
+
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <button
                   onClick={() => setIsRejectModalOpen(true)}
@@ -527,11 +814,31 @@ const AdminDashboard = () => {
                   Reject Request
                 </button>
                 <button
-                  onClick={() => handleApprove(selectedDoctor._id || selectedDoctor.id)}
+                  onClick={() => {
+                    const requestId = selectedDoctor?.id;
+                    console.log(
+                      "🔘 Approve button clicked with ID:",
+                      requestId,
+                    );
+                    if (!requestId) {
+                      toast.error("Request ID not found");
+                      return;
+                    }
+                    handleApprove(requestId);
+                  }}
                   disabled={loading}
-                  className="flex-1 sm:flex-none px-10 py-3 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                  className={`flex-1 sm:flex-none px-10 py-3 text-white font-bold rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 ${selectedRequestType === "doctor" ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200" : "bg-purple-600 hover:bg-purple-700 shadow-purple-200"}`}
                 >
-                   {loading ? "Processing..." : <><ShieldCheck size={18} /> Approve Doctor</>}
+                  {loading ? (
+                    "Processing..."
+                  ) : (
+                    <>
+                      <ShieldCheck size={18} /> Approve{" "}
+                      {selectedRequestType === "doctor"
+                        ? "Doctor"
+                        : "Receptionist"}
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -541,17 +848,24 @@ const AdminDashboard = () => {
 
       {/* Rejection Reason Modal */}
       {isRejectModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-200 border border-gray-100">
-            <h3 className="text-xl font-black text-gray-900 mb-2">Rejection Reason</h3>
+            <h3 className="text-xl font-black text-gray-900 mb-2">
+              Rejection Reason
+            </h3>
             <p className="text-sm text-gray-500 font-medium mb-4">
-              Please explain why this request is being rejected. This feedback will be sent to the doctor.
+              Please explain why this {selectedRequestType} request is being
+              rejected. This feedback will be sent to the {selectedRequestType}.
             </p>
-            
+
             <textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="e.g. Invalid registration documents or incomplete profile..."
+              placeholder={
+                selectedRequestType === "doctor"
+                  ? "e.g. Invalid registration documents or incomplete profile..."
+                  : "e.g. Incomplete qualifications or missing documents..."
+              }
               className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all resize-none mb-6 font-medium text-gray-700"
             />
 
@@ -565,7 +879,7 @@ const AdminDashboard = () => {
               <button
                 onClick={handleReject}
                 disabled={loading}
-                className="flex-[2] px-6 py-3 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 shadow-lg shadow-red-200 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-2 px-6 py-3 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 shadow-lg shadow-red-200 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading ? "Processing..." : "Confirm Rejection"}
               </button>
@@ -578,14 +892,24 @@ const AdminDashboard = () => {
 };
 
 // Helper component for detail items
-const DetailItem = ({ label, value, icon }: { label: string; value: any; icon?: any }) => (
+const DetailItem = ({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: any;
+  icon?: any;
+}) => (
   <div className="group">
     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mb-1 select-none">
       {label}
     </p>
     <div className="flex items-center gap-2 bg-gray-50 px-3 py-2.5 rounded-xl border border-transparent group-hover:border-gray-200 group-hover:bg-white transition-all">
       {icon && <span className="text-gray-400">{icon}</span>}
-      <p className="text-sm font-bold text-gray-800 break-all">{value || "Not provided"}</p>
+      <p className="text-sm font-bold text-gray-800 break-all">
+        {value || "Not provided"}
+      </p>
     </div>
   </div>
 );

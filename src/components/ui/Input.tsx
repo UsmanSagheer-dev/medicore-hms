@@ -4,14 +4,23 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   icon?: React.ReactNode;
+  labelClassName?: string;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, label, error, icon, ...props }, ref) => {
+  ({ className, type, label, error, icon, labelClassName, onChange, value, ...props }, ref) => {
+    // console.log("Input Render:", props.name, "Value:", value, "OnChange Present:", !!onChange);
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      console.log("Input.tsx: onChange fired", e.target.name, e.target.value);
+      if (onChange) {
+        onChange(e);
+      }
+    };
+
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-regular text-gray-700 mb-1">
+          <label className={`block text-sm font-regular text-gray-700 mb-1 ${labelClassName || ''}`}>
             {label}
           </label>
         )}
@@ -23,11 +32,13 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
           <input
             type={type}
+            value={value}
             className={`w-full border rounded-md py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400 transition-all duration-200 ${
               error
                 ? "border-red-500 focus:ring-red-500"
                 : "border-gray-300 focus:ring-[#2C4D9C]"
             } ${icon ? "pl-10 pr-3" : "px-3"} ${className || ""}`}
+            onChange={handleChange}
             ref={ref}
             {...props}
           />

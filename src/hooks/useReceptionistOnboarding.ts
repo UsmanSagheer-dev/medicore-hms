@@ -28,10 +28,11 @@ interface FormDataType {
 
 export const useReceptionistOnboarding = () => {
   const dispatch = useAppDispatch();
-  const { loading, success, error } = useAppSelector((state) => state.receptionist);
+  const { loading, success, error } = useAppSelector(
+    (state) => state.receptionist,
+  );
   const [step, setStep] = useState(1);
-  
-  // Controlled form state
+
   const [formData, setFormData] = useState<FormDataType>({
     full_name: "",
     email: "",
@@ -53,13 +54,10 @@ export const useReceptionistOnboarding = () => {
     computer_proficiency: "",
   });
 
-  // Step 1: Personal Information - NO REFS NEEDED, using formData state
-  // Step 2: Professional Qualifications - NO REFS NEEDED
-  // Step 3: Work Preferences & History - NO REFS NEEDED
-
-  // Handle input changes
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -68,8 +66,15 @@ export const useReceptionistOnboarding = () => {
     }));
   };
 
-  const validateField = (value: string | string[], fieldName: string): boolean => {
-    if (!value || (Array.isArray(value) && value.length === 0) || value === "") {
+  const validateField = (
+    value: string | string[],
+    fieldName: string,
+  ): boolean => {
+    if (
+      !value ||
+      (Array.isArray(value) && value.length === 0) ||
+      value === ""
+    ) {
       toast.error(`Please enter ${fieldName}`);
       return false;
     }
@@ -87,10 +92,15 @@ export const useReceptionistOnboarding = () => {
       if (!validateField(formData.address, "Address")) return;
       if (!validateField(formData.city, "City")) return;
     } else if (step === 2) {
-      if (!validateField(formData.highest_qualification, "Highest Qualification")) return;
-      if (!validateField(formData.years_of_experience, "Years of Experience")) return;
+      if (
+        !validateField(formData.highest_qualification, "Highest Qualification")
+      )
+        return;
+      if (!validateField(formData.years_of_experience, "Years of Experience"))
+        return;
       if (!validateField(formData.languages, "Languages Spoken")) return;
-      if (!validateField(formData.computer_proficiency, "Computer Proficiency")) return;
+      if (!validateField(formData.computer_proficiency, "Computer Proficiency"))
+        return;
     } else if (step === 3) {
       if (!validateField(formData.preferred_shift, "Preferred Shift")) return;
       if (formData.availability_days.length === 0) {

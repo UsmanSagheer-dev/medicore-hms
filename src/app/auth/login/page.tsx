@@ -34,6 +34,14 @@ function Login() {
           router.push("/onboarding/doctor/pending");
           dispatch(clearError());
         }
+      } else if (role === 'receptionist') {
+        if (user.receptionistId || user.id) {
+          window.location.href = `/dashboard/${role}`;
+          toast.success(`Welcome ${user.name}`);
+        } else {
+          router.push("/onboarding/receptionist/pending");
+          dispatch(clearError());
+        }
       } else {
         window.location.href = `/dashboard/${role}`;
         toast.success(`Welcome ${user.name}`);

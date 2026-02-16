@@ -59,8 +59,8 @@ export default function DoctorOnboarding() {
   const stepClass = (s: number) => (step === s ? "block" : "hidden");
 
   return (
-    <div className="w-full max-w-full bg-white/5 backdrop-blur-2xl border border-white/10 p-10 rounded-[3rem] shadow-2xl transition-all duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+    <div className="w-full max-w-6xl bg-white/5 backdrop-blur-2xl border border-white/10 p-10 rounded-[3rem] shadow-2xl transition-all duration-500">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center  gap-6">
         <div>
           <h1 className="text-4xl font-extrabold text-white mb-3">
             Complete Your Doctor Profile
@@ -448,7 +448,7 @@ export default function DoctorOnboarding() {
         </div>
 
         {/* Step 7: Completion */}
-        <div className={`space-y-8 animate-in text-center py-10 flex flex-col items-center ${stepClass(7)}`}>
+        <div className={` animate-in text-center  flex flex-col items-center justify-center ${stepClass(7)}`}>
           <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mb-8 shadow-2xl shadow-green-500/20">
             <CheckCircle2 className="w-12 h-12 text-green-500" />
           </div>
@@ -469,7 +469,7 @@ export default function DoctorOnboarding() {
         </div>
       </div>
 
-      <div className="mt-16 flex justify-between items-center bg-white/5 p-6 rounded-4xl border border-white/10">
+      <div className="mt-8 flex justify-between items-center bg-white/5 p-6 rounded-4xl border border-white/10">
         <button
           onClick={handleBack}
           disabled={step === 1}

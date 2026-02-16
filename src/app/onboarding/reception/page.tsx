@@ -67,8 +67,8 @@ export default function ReceptionistOnboardingPage() {
 
   useEffect(() => {
     if (success) {
-      toast.success("Onboarding submitted successfully!");
-      router.push("/dashboard/receptionist"); // Or a pending approval page
+      toast.success("Onboarding submitted successfully! Please wait for admin approval.");
+      router.push("/onboarding/receptionist/pending");
       dispatch(resetReceptionistState());
     }
     if (error) {

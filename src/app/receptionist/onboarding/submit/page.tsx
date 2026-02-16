@@ -68,7 +68,7 @@ export default function ReceptionistOnboardingPage() {
   useEffect(() => {
     if (success) {
       // Toast is already in hook, but this is fine
-      router.push("/dashboard/receptionist"); // Or a pending approval page
+      router.push("/onboarding/receptionist/pending");
       dispatch(resetReceptionistState());
     }
     if (error) {

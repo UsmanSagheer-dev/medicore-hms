@@ -1,3 +1,5 @@
+"use client";
+
 import Input from "@/components/ui/Input";
 import {  Mail } from "lucide-react";
 import Link from "next/link";

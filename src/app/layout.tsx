@@ -31,6 +31,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 h-screen flex flex-col overflow-hidden`}
+        suppressHydrationWarning
       >
         <ReduxProvider>
           {!isAuthPage && !isOnboardingPage && <Header />}

@@ -34,6 +34,7 @@ import {
   pendingReceptionistRequests,
   approveReceptionistRequest,
   rejectReceptionistRequest,
+  activeReceptionist,
 } from "@/redux/slices/receptionistSlice";
 
 const AdminDashboard = () => {
@@ -86,14 +87,7 @@ const AdminDashboard = () => {
       status: "Active",
       email: "usman@medicore.com",
     },
-    {
-      id: 2,
-      name: "Zahid Ahmed",
-      role: "Receptionist",
-      specialty: "Front Desk",
-      status: "Active",
-      email: "zahid@medicore.com",
-    },
+   
     {
       id: 3,
       name: "Dr. Sarah Khan",
@@ -102,14 +96,7 @@ const AdminDashboard = () => {
       status: "Inactive",
       email: "sarah@medicore.com",
     },
-    {
-      id: 4,
-      name: "Maria Iqbal",
-      role: "Receptionist",
-      specialty: "Evening Shift",
-      status: "Active",
-      email: "maria@medicore.com",
-    },
+ 
   ];
 
   const dispatch = useDispatch<AppDispatch>();
@@ -119,6 +106,7 @@ const AdminDashboard = () => {
   const {
     pendingRequests: receptionistPendingRequests,
     loading: receptionistLoading,
+    receptionists,
   } = useSelector((state: RootState) => state.receptionist);
 
   useEffect(() => {
@@ -128,7 +116,9 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     dispatch(pendingReceptionistRequests());
+    dispatch(activeReceptionist() as any);
     console.log("🔄 Dispatching pendingReceptionistRequests");
+    console.log(activeReceptionist)
   }, [dispatch]);
 
   const requests = Array.isArray(pendingRequests) ? pendingRequests : [];
@@ -210,6 +200,9 @@ const AdminDashboard = () => {
       toast.error(err?.message || (err as string) || "Rejection failed");
     }
   };
+
+
+
 
   const openDetails = (doctor: any) => {
     setSelectedDoctor(doctor);
@@ -320,9 +313,9 @@ const AdminDashboard = () => {
               </button>
               <button
                 onClick={() => setActiveTab("staff")}
-                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === "staff" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === "staff" ? "bg-white text-purple-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
-                Receptionists
+                Active Receptionists
               </button>
             </div>
           </div>
@@ -452,58 +445,66 @@ const AdminDashboard = () => {
                 <tr>
                   <th className="px-6 py-4">Name & Role</th>
                   <th className="px-6 py-4">Specialty/Shift</th>
+                  <th className="px-6 py-4">Salary</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {staffList
-                  .filter(
-                    (user) =>
-                      activeTab === "all" ||
-                      (activeTab === "doctors" && user.role === "Doctor") ||
-                      (activeTab === "staff" && user.role === "Receptionist"),
-                  )
-                  .map((user) => (
+                {(activeTab === "staff" ? receptionists : staffList)
+                  .filter((user: any) => {
+                    if (activeTab === "staff") return true;
+                    if (activeTab === "all") return true;
+                    if (activeTab === "doctors" && user.role === "Doctor") return true;
+                    return false;
+                  })
+                  .map((user: any) => (
                     <tr
                       key={user.id}
                       className="hover:bg-blue-50/30 transition-colors group"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
-                            {user.name
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${activeTab === "staff" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>
+                            {(user.full_name || user.name || "U")
                               .split(" ")
-                              .map((n) => n[0])
+                              .map((n: string) => n[0])
                               .join("")}
                           </div>
                           <div>
                             <p className="text-sm font-bold text-gray-900">
-                              {user.name}
+                              {user.full_name || user.name}
                             </p>
                             <p className="text-[10px] text-gray-500 font-medium">
-                              {user.role}
+                              {activeTab === "staff" ? "Receptionist" : user.role}
                             </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-sm font-semibold text-gray-700">
-                          {user.specialty}
+                          {activeTab === "staff" 
+                            ? (user.shiftTiming || "N/A")
+                            : user.salary ? `${user.salary} Rs.` : user.specialty || "N/A"}
                         </p>
                         <p className="text-[10px] text-gray-400">
                           {user.email}
                         </p>
                       </td>
+                      <td>
+                        <p className="text-sm font-semibold text-gray-700">
+                          {user.salary ? `${user.salary} Rs.` : "N/A"}
+                        </p>
+                      </td>
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold ${
-                            user.status === "Active"
+                            user.status === "Active" || activeTab === "staff"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                               : "bg-gray-100 text-gray-600 border border-gray-200"
                           }`}
                         >
-                          {user.status}
+                          {activeTab === "staff" ? "Active" : user.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">

@@ -3,11 +3,8 @@ import api from "@/lib/axios";
 
 interface ReceptionistProfile {
   id?: string;
-  hospitalName?: string;
-  department?: string;
+
   shiftTiming?: string;
-  experience?: string;
-  address?: string;
 
   full_name?: string;
   email?: string;
@@ -22,6 +19,7 @@ interface ReceptionistProfile {
 interface ReceptionistState {
   profile: ReceptionistProfile | null;
   pendingRequests: ReceptionistProfile[];
+  receptionists: ReceptionistProfile[];
   loading: boolean;
   error: string | null;
   success: boolean;
@@ -30,6 +28,7 @@ interface ReceptionistState {
 const initialState: ReceptionistState = {
   profile: null,
   pendingRequests: [],
+  receptionists: [],
   loading: false,
   error: null,
   success: false,
@@ -113,6 +112,18 @@ export const rejectReceptionistRequest = createAsyncThunk(
         },
       );
       console.log("✅ Rejection response:", response.data);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  },
+);
+
+export const activeReceptionist = createAsyncThunk(
+  "receptionist/fetchActive",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get("/receptionists");
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -232,6 +243,23 @@ export const receptionistSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
         state.success = false;
+      })
+      .addCase(activeReceptionist.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(activeReceptionist.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.receptionists = Array.isArray(action.payload) ? action.payload : action.payload?.receptionists || [];
+        console.log("📋 Active Receptionists Response:", action.payload);
+      })
+      .addCase(activeReceptionist.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        state.success = false;
+        state.profile = null;
       });
   },
 });

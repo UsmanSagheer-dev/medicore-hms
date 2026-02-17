@@ -6,18 +6,11 @@ import {
   User,
   Mail,
   Phone,
-  Calendar,
-  MapPin,
   FileText,
-  BadgeCheck,
-  Briefcase,
-  Monitor,
-  Globe,
   Clock,
   CheckCircle2,
   ArrowRight,
   ArrowLeft,
-  Building2,
 } from "lucide-react";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
@@ -29,8 +22,7 @@ import toast from "react-hot-toast";
 
 const steps = [
   { id: 1, title: "Personal Info", icon: User },
-  { id: 2, title: "Professional Info", icon: Briefcase },
-  { id: 3, title: "Work Preferences", icon: Clock },
+  { id: 2, title: "Work Preferences", icon: Clock },
 ];
 
 export default function ReceptionistOnboardingPage() {
@@ -61,7 +53,7 @@ export default function ReceptionistOnboardingPage() {
     
     if (user?.role !== "RECEPTIONIST") {
       toast.error("Access denied. Only receptionists can access this page.");
-      router.push("/unauthorized"); // Or dashboard
+      router.push("/unauthorized"); 
     }
   }, [isAuthenticated, user, router]);
 
@@ -79,8 +71,8 @@ export default function ReceptionistOnboardingPage() {
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4 md:p-8">
-      <div className="w-full max-w-5xl bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col md:flex-row">
+    <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4 md:p-8">
+      <div className="w-full  bg-white/10 backdrop-blur-xl border border-white/20 rounded-4xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
         
         {/* Sidebar / Progress */}
         <div className="w-full md:w-1/3 bg-black/20 p-8 flex flex-col justify-between relative overflow-hidden">
@@ -124,7 +116,7 @@ export default function ReceptionistOnboardingPage() {
         </div>
 
         {/* Content Area */}
-        <div className="w-full md:w-2/3 p-8 md:p-12 bg-white/5 relative">
+        <div className="w-full md:w-full p-8 md:p-12 bg-white/5 relative">
            {/* Step 1: Personal Information */}
            {step === 1 && (
              <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
@@ -161,29 +153,6 @@ export default function ReceptionistOnboardingPage() {
                      className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10"
                      icon={<Phone className="w-4 h-4 text-white/50" />}
                   />
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-white/70 mb-1">Gender</label>
-                    <Select
-                      name="gender"
-                      value={formData.gender}
-                      onChange={handleChange}
-                      options={[
-                        { label: "Male", value: "Male" },
-                        { label: "Female", value: "Female" },
-                        { label: "Other", value: "Other" },
-                      ]}
-                      className="bg-white/5 border-white/10 text-white focus:bg-white/10"
-                    />
-                  </div>
-                  <Input 
-                     name="date_of_birth"
-                     value={formData.date_of_birth}
-                     onChange={handleChange}
-                     label="Date of Birth" 
-                     type="date"
-                     className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10"
-                     labelClassName="text-white/70"
-                  />
                   <Input 
                      name="cnic_number"
                      value={formData.cnic_number}
@@ -194,113 +163,12 @@ export default function ReceptionistOnboardingPage() {
                      labelClassName="text-white/70"
                      icon={<FileText className="w-4 h-4 text-white/50" />}
                   />
-                  <Input 
-                     name="address"
-                     value={formData.address}
-                     onChange={handleChange}
-                     label="Address" 
-                     placeholder="123 Main St" 
-                     className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10"
-                     labelClassName="text-white/70"
-                     icon={<MapPin className="w-4 h-4 text-white/50" />}
-                  />
-                  <Input 
-                     name="city"
-                     value={formData.city}
-                     onChange={handleChange}
-                     label="City" 
-                     placeholder="New York" 
-                     className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10"
-                     labelClassName="text-white/70"
-                     icon={<Building2 className="w-4 h-4 text-white/50" />}
-                  />
                 </div>
              </div>
            )}
 
-           {/* Step 2: Professional Info */}
+           {/* Step 2: Work Preferences */}
            {step === 2 && (
-             <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
-                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                  <Briefcase className="text-blue-400" /> Professional Qualifications
-                </h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Input 
-                     name="highest_qualification"
-                     value={formData.highest_qualification}
-                     onChange={handleChange}
-                     label="Highest Qualification" 
-                     placeholder="Bachelor's Degree" 
-                     className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10"
-                     labelClassName="text-white/70"
-                     icon={<BadgeCheck className="w-4 h-4 text-white/50" />}
-                  />
-                  <Input 
-                     name="qualification_field"
-                     value={formData.qualification_field}
-                     onChange={handleChange}
-                     label="Field of Study" 
-                     placeholder="Check this field is correct" 
-                     className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10"
-                     labelClassName="text-white/70"
-                  />
-                  <Input 
-                     name="years_of_experience"
-                     value={formData.years_of_experience}
-                     onChange={handleChange}
-                     label="Years of Experience" 
-                     type="number"
-                     placeholder="3" 
-                     className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10"
-                     labelClassName="text-white/70"
-                  />
-                  <Input 
-                     name="languages"
-                     value={formData.languages}
-                     onChange={handleChange}
-                     label="Languages Spoken" 
-                     placeholder="English, Spanish" 
-                     className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10"
-                     labelClassName="text-white/70"
-                     icon={<Globe className="w-4 h-4 text-white/50" />}
-                  />
-                  <div className="md:col-span-2">
-                    <Input 
-                       name="computer_proficiency"
-                       value={formData.computer_proficiency}
-                       onChange={handleChange}
-                       label="Computer Proficiency" 
-                       placeholder="MS Office, Typing, etc." 
-                       className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10"
-                       labelClassName="text-white/70"
-                       icon={<Monitor className="w-4 h-4 text-white/50" />}
-                    />
-                  </div>
-                  <Input 
-                     name="previous_employer"
-                     value={formData.previous_employer}
-                     onChange={handleChange}
-                     label="Previous Employer" 
-                     placeholder="Company Name" 
-                     className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10"
-                     labelClassName="text-white/70"
-                  />
-                  <Input 
-                     name="previous_designation"
-                     value={formData.previous_designation}
-                     onChange={handleChange}
-                     label="Previous Designation" 
-                     placeholder="Front Desk Officer" 
-                     className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:bg-white/10"
-                     labelClassName="text-white/70"
-                  />
-                </div>
-             </div>
-           )}
-
-           {/* Step 3: Work Preferences */}
-           {step === 3 && (
              <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
                 <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
                   <Clock className="text-blue-400" /> Work Preferences
@@ -372,8 +240,8 @@ export default function ReceptionistOnboardingPage() {
                isLoading={loading}
                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl shadow-lg shadow-blue-600/20 flex items-center gap-2 group"
              >
-               {step === 3 ? "Submit Application" : "Next Step"}
-               {step !== 3 && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+               {step === 2 ? "Submit Application" : "Next Step"}
+               {step !== 2 && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
              </Button>
            </div>
         </div>

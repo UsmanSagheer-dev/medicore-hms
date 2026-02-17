@@ -9,21 +9,13 @@ interface FormDataType {
   full_name: string;
   email: string;
   phone: string;
-  gender: string;
-  date_of_birth: string;
-  address: string;
-  city: string;
-  highest_qualification: string;
-  qualification_field: string;
-  years_of_experience: string;
-  previous_employer: string;
-  previous_designation: string;
   cnic_number: string;
+  years_of_experience: string;
+  languages: string;
+  computer_proficiency: string;
   preferred_shift: string;
   availability_days: string[];
   can_work_weekends: boolean;
-  languages: string;
-  computer_proficiency: string;
 }
 
 export const useReceptionistOnboarding = () => {
@@ -37,21 +29,13 @@ export const useReceptionistOnboarding = () => {
     full_name: "",
     email: "",
     phone: "",
-    gender: "Male",
-    date_of_birth: "",
-    address: "",
-    city: "",
-    highest_qualification: "",
-    qualification_field: "",
-    years_of_experience: "",
-    previous_employer: "",
-    previous_designation: "",
     cnic_number: "",
+    years_of_experience: "",
+    languages: "",
+    computer_proficiency: "",
     preferred_shift: "Morning",
     availability_days: [],
     can_work_weekends: false,
-    languages: "",
-    computer_proficiency: "",
   });
 
   const handleChange = (
@@ -86,22 +70,8 @@ export const useReceptionistOnboarding = () => {
       if (!validateField(formData.full_name, "Full Name")) return;
       if (!validateField(formData.email, "Email Address")) return;
       if (!validateField(formData.phone, "Phone Number")) return;
-      if (!validateField(formData.gender, "Gender")) return;
-      if (!validateField(formData.date_of_birth, "Date of Birth")) return;
       if (!validateField(formData.cnic_number, "CNIC Number")) return;
-      if (!validateField(formData.address, "Address")) return;
-      if (!validateField(formData.city, "City")) return;
     } else if (step === 2) {
-      if (
-        !validateField(formData.highest_qualification, "Highest Qualification")
-      )
-        return;
-      if (!validateField(formData.years_of_experience, "Years of Experience"))
-        return;
-      if (!validateField(formData.languages, "Languages Spoken")) return;
-      if (!validateField(formData.computer_proficiency, "Computer Proficiency"))
-        return;
-    } else if (step === 3) {
       if (!validateField(formData.preferred_shift, "Preferred Shift")) return;
       if (formData.availability_days.length === 0) {
         toast.error("Please select at least one availability day");
@@ -109,7 +79,7 @@ export const useReceptionistOnboarding = () => {
       }
     }
 
-    if (step < 3) setStep((prev) => prev + 1);
+    if (step < 2) setStep((prev) => prev + 1);
     else handleSubmit();
   };
 

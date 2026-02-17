@@ -12,20 +12,10 @@ interface ReceptionistProfile {
   full_name?: string;
   email?: string;
   phone?: string;
-  gender?: string;
-  date_of_birth?: string;
-  city?: string;
-  highest_qualification?: string;
-  qualification_field?: string;
-  years_of_experience?: string;
-  previous_employer?: string;
-  previous_designation?: string;
   cnic_number?: string;
   preferred_shift?: string;
   availability_days?: string[];
   can_work_weekends?: boolean;
-  languages?: string;
-  computer_proficiency?: string;
   status?: string;
 }
 

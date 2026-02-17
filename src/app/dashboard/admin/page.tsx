@@ -353,7 +353,7 @@ const AdminDashboard = () => {
                   <th className="px-6 py-4">
                     {selectedRequestType === "doctor"
                       ? "Specialty & Exp."
-                      : "Department & Exp."}
+                      : " Exp."}
                   </th>
                   <th className="px-6 py-4">Request Date</th>
                   <th className="px-6 py-4 text-right">Actions</th>
@@ -365,7 +365,7 @@ const AdminDashboard = () => {
                   : receptionistRequests
                 ).map((req: any) => (
                   <tr
-                    key={req._id || req.id || req.cnic_number}
+                    key={ req.cnic_number}
                     className="hover:bg-amber-50/30 transition-colors group"
                   >
                     <td className="px-6 py-4">
@@ -389,12 +389,7 @@ const AdminDashboard = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-semibold text-gray-700">
-                        {req.specialization ||
-                          req.specialty ||
-                          req.department ||
-                          "N/A"}
-                      </p>
+                      
                       <p className="text-[10px] text-gray-400">
                         {req.years_of_experience || req.experience || "N/A"}{" "}
                         experience
@@ -544,13 +539,11 @@ const AdminDashboard = () => {
                   <h2 className="text-xl font-black text-gray-900 leading-tight">
                     {selectedDoctor.full_name}
                   </h2>
-                  <p
-                    className={`text-sm font-bold ${selectedRequestType === "doctor" ? "text-blue-600" : "text-purple-600"}`}
-                  >
-                    {selectedRequestType === "doctor"
-                      ? `${selectedDoctor.specialization} • ${selectedDoctor.years_of_experience} Experience`
-                      : `${selectedDoctor.department || "N/A"} • ${selectedDoctor.years_of_experience || selectedDoctor.experience || "N/A"} Experience`}
-                  </p>
+                  {selectedRequestType === "doctor" && (
+                    <p className="text-sm font-bold text-blue-600">
+                      {`${selectedDoctor.specialization} • ${selectedDoctor.years_of_experience} Experience`}
+                    </p>
+                  )}
                 </div>
               </div>
               <button
@@ -566,20 +559,12 @@ const AdminDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 {/* Personal & Professional Info */}
                 <div className="space-y-8">
-                  <section>
-                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                      <BookOpen
-                        size={14}
-                        className={
-                          selectedRequestType === "doctor"
-                            ? "text-blue-500"
-                            : "text-purple-500"
-                        }
-                      />
-                      {selectedRequestType === "doctor"
-                        ? "Professional Credentials"
-                        : "Qualifications"}
-                    </h3>
+                  {selectedRequestType === "doctor" && (
+                    <section>
+                      <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <BookOpen size={14} className="text-blue-500" />
+                        Professional Credentials
+                      </h3>
                     <div className="grid gap-4">
                       {selectedRequestType === "doctor" ? (
                         <>
@@ -606,30 +591,11 @@ const AdminDashboard = () => {
                         </>
                       ) : (
                         <>
-                          <DetailItem
-                            label="Highest Qualification"
-                            value={selectedDoctor.highest_qualification}
-                          />
-                          <DetailItem
-                            label="Qualification Field"
-                            value={selectedDoctor.qualification_field}
-                          />
-                          <DetailItem
-                            label="Years of Experience"
-                            value={selectedDoctor.years_of_experience}
-                          />
-                          <DetailItem
-                            label="Previous Employer"
-                            value={selectedDoctor.previous_employer}
-                          />
-                          <DetailItem
-                            label="Previous Designation"
-                            value={selectedDoctor.previous_designation}
-                          />
                         </>
                       )}
                     </div>
                   </section>
+                  )}
 
                   <section>
                     <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -651,20 +617,6 @@ const AdminDashboard = () => {
                         label="CNIC Number"
                         value={selectedDoctor.cnic_number}
                       />
-                      {selectedRequestType === "receptionist" &&
-                        selectedDoctor.gender && (
-                          <DetailItem
-                            label="Gender"
-                            value={selectedDoctor.gender}
-                          />
-                        )}
-                      {selectedRequestType === "receptionist" &&
-                        selectedDoctor.date_of_birth && (
-                          <DetailItem
-                            label="Date of Birth"
-                            value={selectedDoctor.date_of_birth}
-                          />
-                        )}
                     </div>
                   </section>
                 </div>
@@ -739,23 +691,11 @@ const AdminDashboard = () => {
                         </h3>
                         <div className="grid gap-4">
                           <DetailItem
-                            label="Department"
-                            value={selectedDoctor.department}
-                          />
-                          <DetailItem
                             label="Shift Timing"
                             value={
                               selectedDoctor.shiftTiming ||
                               selectedDoctor.preferred_shift
                             }
-                          />
-                          <DetailItem
-                            label="City"
-                            value={selectedDoctor.city}
-                          />
-                          <DetailItem
-                            label="Address"
-                            value={selectedDoctor.address}
                           />
                         </div>
                       </section>
@@ -766,14 +706,6 @@ const AdminDashboard = () => {
                           Preferences & Skills
                         </h3>
                         <div className="grid gap-4">
-                          <DetailItem
-                            label="Computer Proficiency"
-                            value={selectedDoctor.computer_proficiency}
-                          />
-                          <DetailItem
-                            label="Languages"
-                            value={selectedDoctor.languages}
-                          />
                           <DetailItem
                             label="Can Work Weekends"
                             value={

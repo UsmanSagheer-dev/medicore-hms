@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { pendingDoctorRequests } from "@/redux/slices/doctorSlice";
+import { pendingDoctorRequests, activeDoctor } from "@/redux/slices/doctorSlice";
 import { RootState, AppDispatch } from "@/redux/store";
 import {
   Users,
@@ -54,7 +54,7 @@ const AdminDashboard = () => {
   const [editFormData, setEditFormData] = useState<any>(null);
 
   const dispatch = useDispatch<AppDispatch>();
-  const { pendingRequests, loading, error } = useSelector(
+  const { pendingRequests, loading, error, activeDoctors } = useSelector(
     (state: RootState) => state.doctor,
   );
   const {
@@ -65,7 +65,8 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     dispatch(pendingDoctorRequests());
-    console.log("🔄 Dispatching pendingDoctorRequests");
+    dispatch(activeDoctor() as any);
+    console.log("🔄 Dispatching pendingDoctorRequests and activeDoctor");
   }, [dispatch]);
 
   useEffect(() => {
@@ -86,7 +87,7 @@ const AdminDashboard = () => {
   const stats = [
     {
       label: "Total Doctors",
-      value: receptionists?.filter((r: any) => r.role === "Doctor").length || "0",
+      value: activeDoctors?.length || "0",
       icon: Stethoscope,
       color: "text-blue-600",
       bg: "bg-blue-50",

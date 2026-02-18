@@ -35,6 +35,7 @@ interface DoctorProfile {
 interface DoctorState {
   profile: DoctorProfile | null;
   pendingRequests: DoctorProfile[];
+  activeDoctors: DoctorProfile[];
   loading: boolean;
   error: string | null;
   success: boolean;
@@ -43,6 +44,7 @@ interface DoctorState {
 const initialState: DoctorState = {
   profile: null,
   pendingRequests: [],
+  activeDoctors: [],
   loading: false,
   error: null,
   success: false,
@@ -104,6 +106,17 @@ export const rejectDoctorRequest = createAsyncThunk(
       const response = await api.post(`/doctor/onboarding/${doctorId}/reject`, {
         rejectionReason,
       });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  },
+);
+
+export const activeDoctor= createAsyncThunk(
+  "doctor/activeDoctor",
+  async (_, { rejectWithValue }) => {
+    try {      const response = await api.get("/doctors");
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -186,6 +199,23 @@ export const doctorSlice = createSlice({
         );
       })
       .addCase(rejectDoctorRequest.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        state.success = false;
+      })
+      .addCase(activeDoctor.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(activeDoctor.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        const data = action.payload.doctors || action.payload.data || action.payload;
+        state.activeDoctors = Array.isArray(data) ? data : [];
+        console.log("Active doctors:", state.activeDoctors);
+      })
+      .addCase(activeDoctor.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
         state.success = false;

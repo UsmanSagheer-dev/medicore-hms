@@ -53,57 +53,6 @@ const AdminDashboard = () => {
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
   const [editFormData, setEditFormData] = useState<any>(null);
 
-  const stats = [
-    {
-      label: "Total Doctors",
-      value: "12",
-      icon: Stethoscope,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
-    },
-    {
-      label: "Total Receptionists",
-      value: "08",
-      icon: Briefcase,
-      color: "text-purple-600",
-      bg: "bg-purple-50",
-    },
-    {
-      label: "New Requests",
-      value: "05",
-      icon: UserPlus,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
-    },
-    {
-      label: "Total Patients",
-      value: "1,280",
-      icon: Users,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
-    },
-  ];
-
-  const staffList = [
-    {
-      id: 1,
-      name: "Dr. Usman Sagheer",
-      role: "Doctor",
-      specialty: "Cardiology",
-      status: "Active",
-      email: "usman@medicore.com",
-    },
-
-    {
-      id: 3,
-      name: "Dr. Sarah Khan",
-      role: "Doctor",
-      specialty: "Pediatrics",
-      status: "Inactive",
-      email: "sarah@medicore.com",
-    },
-  ];
-
   const dispatch = useDispatch<AppDispatch>();
   const { pendingRequests, loading, error } = useSelector(
     (state: RootState) => state.doctor,
@@ -133,6 +82,58 @@ const AdminDashboard = () => {
 
   console.log("👨‍⚕️ Doctor Requests:", requests);
   console.log("📝 Receptionist Requests:", receptionistRequests);
+
+  const stats = [
+    {
+      label: "Total Doctors",
+      value: receptionists?.filter((r: any) => r.role === "Doctor").length || "0",
+      icon: Stethoscope,
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+    },
+    {
+      label: "Total Receptionists",
+      value: receptionists?.length || "0",
+      icon: Briefcase,
+      color: "text-purple-600",
+      bg: "bg-purple-50",
+    },
+    {
+      label: "New Requests",
+      value: (requests.length + receptionistRequests.length) || "0",
+      icon: UserPlus,
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+    },
+    {
+      label: "Total Patients",
+      value: "1,280",
+      icon: Users,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+    },
+  ];
+
+  const staffList = receptionists && receptionists.length > 0 
+    ? receptionists 
+    : [
+        {
+          id: 1,
+          name: "Dr. Usman Sagheer",
+          role: "Doctor",
+          specialty: "Cardiology",
+          status: "Active",
+          email: "usman@medicore.com",
+        },
+        {
+          id: 3,
+          name: "Dr. Sarah Khan",
+          role: "Doctor",
+          specialty: "Pediatrics",
+          status: "Inactive",
+          email: "sarah@medicore.com",
+        },
+      ];
 
   const handleApprove = async (id: string) => {
     try {
@@ -263,7 +264,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="h-full flex flex-col space-y-6 p-4">
+    <div className="h-full flex flex-col space-y-6 p-4  overflow-auto">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -325,7 +326,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col bg-white rounded-2xl border border-gray-200 shadow-sm  ">
         <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <h2 className="text-lg font-bold text-gray-900">Hospital Staff</h2>
@@ -567,7 +568,7 @@ const AdminDashboard = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-2  transition-opacity">
                           <button
                             onClick={() => openEditModal(user)}
                             className="p-2 hover:bg-white rounded-lg text-blue-600 shadow-sm border border-transparent hover:border-gray-200 transition-all"

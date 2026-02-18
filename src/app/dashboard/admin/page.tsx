@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { pendingDoctorRequests } from "@/redux/slices/doctorSlice";
+import { pendingDoctorRequests, activeDoctor } from "@/redux/slices/doctorSlice";
 import { RootState, AppDispatch } from "@/redux/store";
 import {
   Users,
@@ -24,7 +24,6 @@ import {
   BookOpen,
   ArrowLeft,
 } from "lucide-react";
-import Button from "@/components/ui/Button";
 import toast from "react-hot-toast";
 import {
   approveDoctorRequest,
@@ -35,7 +34,11 @@ import {
   approveReceptionistRequest,
   rejectReceptionistRequest,
   activeReceptionist,
+  updateReceptionistStaffData,
 } from "@/redux/slices/receptionistSlice";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
+import Button from "@/components/ui/Button";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("requests");
@@ -46,25 +49,59 @@ const AdminDashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<any>(null);
+  const [editFormData, setEditFormData] = useState<any>(null);
+
+  const dispatch = useDispatch<AppDispatch>();
+  const { pendingRequests, loading, error, activeDoctors } = useSelector(
+    (state: RootState) => state.doctor,
+  );
+  const {
+    pendingRequests: receptionistPendingRequests,
+    loading: receptionistLoading,
+    receptionists,
+  } = useSelector((state: RootState) => state.receptionist);
+
+  useEffect(() => {
+    dispatch(pendingDoctorRequests());
+    dispatch(activeDoctor() as any);
+    console.log("🔄 Dispatching pendingDoctorRequests and activeDoctor");
+  }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(pendingReceptionistRequests());
+    dispatch(activeReceptionist() as any);
+    console.log("🔄 Dispatching pendingReceptionistRequests");
+    console.log(activeReceptionist);
+  }, [dispatch]);
+
+  const requests = Array.isArray(pendingRequests) ? pendingRequests : [];
+  const receptionistRequests = Array.isArray(receptionistPendingRequests)
+    ? receptionistPendingRequests
+    : [];
+
+  console.log("👨‍⚕️ Doctor Requests:", requests);
+  console.log("📝 Receptionist Requests:", receptionistRequests);
 
   const stats = [
     {
       label: "Total Doctors",
-      value: "12",
+      value: activeDoctors?.length || "0",
       icon: Stethoscope,
       color: "text-blue-600",
       bg: "bg-blue-50",
     },
     {
       label: "Total Receptionists",
-      value: "08",
+      value: receptionists?.length || "0",
       icon: Briefcase,
       color: "text-purple-600",
       bg: "bg-purple-50",
     },
     {
       label: "New Requests",
-      value: "05",
+      value: (requests.length + receptionistRequests.length) || "0",
       icon: UserPlus,
       color: "text-amber-600",
       bg: "bg-amber-50",
@@ -78,56 +115,26 @@ const AdminDashboard = () => {
     },
   ];
 
-  const staffList = [
-    {
-      id: 1,
-      name: "Dr. Usman Sagheer",
-      role: "Doctor",
-      specialty: "Cardiology",
-      status: "Active",
-      email: "usman@medicore.com",
-    },
-   
-    {
-      id: 3,
-      name: "Dr. Sarah Khan",
-      role: "Doctor",
-      specialty: "Pediatrics",
-      status: "Inactive",
-      email: "sarah@medicore.com",
-    },
- 
-  ];
-
-  const dispatch = useDispatch<AppDispatch>();
-  const { pendingRequests, loading, error } = useSelector(
-    (state: RootState) => state.doctor,
-  );
-  const {
-    pendingRequests: receptionistPendingRequests,
-    loading: receptionistLoading,
-    receptionists,
-  } = useSelector((state: RootState) => state.receptionist);
-
-  useEffect(() => {
-    dispatch(pendingDoctorRequests());
-    console.log("🔄 Dispatching pendingDoctorRequests");
-  }, [dispatch]);
-
-  useEffect(() => {
-    dispatch(pendingReceptionistRequests());
-    dispatch(activeReceptionist() as any);
-    console.log("🔄 Dispatching pendingReceptionistRequests");
-    console.log(activeReceptionist)
-  }, [dispatch]);
-
-  const requests = Array.isArray(pendingRequests) ? pendingRequests : [];
-  const receptionistRequests = Array.isArray(receptionistPendingRequests)
-    ? receptionistPendingRequests
-    : [];
-
-  console.log("👨‍⚕️ Doctor Requests:", requests);
-  console.log("📝 Receptionist Requests:", receptionistRequests);
+  const staffList = receptionists && receptionists.length > 0 
+    ? receptionists 
+    : [
+        {
+          id: 1,
+          name: "Dr. Usman Sagheer",
+          role: "Doctor",
+          specialty: "Cardiology",
+          status: "Active",
+          email: "usman@medicore.com",
+        },
+        {
+          id: 3,
+          name: "Dr. Sarah Khan",
+          role: "Doctor",
+          specialty: "Pediatrics",
+          status: "Inactive",
+          email: "sarah@medicore.com",
+        },
+      ];
 
   const handleApprove = async (id: string) => {
     try {
@@ -201,16 +208,64 @@ const AdminDashboard = () => {
     }
   };
 
-
-
-
   const openDetails = (doctor: any) => {
     setSelectedDoctor(doctor);
     setIsModalOpen(true);
   };
 
+  const openEditModal = (staff: any) => {
+    setSelectedStaff(staff);
+    setEditFormData({ ...staff });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      // Call the update API for receptionist
+      if (
+        activeTab === "staff" ||
+        selectedStaff?.role === "Receptionist" ||
+        !selectedStaff?.role
+      ) {
+        await dispatch(
+          updateReceptionistStaffData({
+            receptionistId: selectedStaff.id,
+            updateData: editFormData,
+          }),
+        ).unwrap();
+        toast.success("Receptionist updated successfully!");
+      } else {
+        // For doctors, add similar logic when needed
+        toast.success("Staff updated successfully!");
+      }
+
+      // Refresh the list
+      dispatch(activeReceptionist() as any);
+
+      setIsEditModalOpen(false);
+      setSelectedStaff(null);
+      setEditFormData(null);
+    } catch (err: any) {
+      console.error("❌ Edit error:", err);
+      toast.error(err?.message || err || "Update failed");
+    }
+  };
+
+  const handleDeleteStaff = async (staffId: string | number) => {
+    if (confirm("Are you sure you want to delete this staff member?")) {
+      try {
+        // Add API call here to delete staff member
+        toast.success("Staff deleted successfully!");
+      } catch (err: any) {
+        console.error("❌ Delete error:", err);
+        toast.error(err?.message || "Delete failed");
+      }
+    }
+  };
+
   return (
-    <div className="h-full flex flex-col space-y-6 p-4">
+    <div className="h-full flex flex-col space-y-6 p-4  overflow-auto">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -272,7 +327,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col bg-white rounded-2xl border border-gray-200 shadow-sm  ">
         <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <h2 className="text-lg font-bold text-gray-900">Hospital Staff</h2>
@@ -358,7 +413,7 @@ const AdminDashboard = () => {
                   : receptionistRequests
                 ).map((req: any) => (
                   <tr
-                    key={ req.cnic_number}
+                    key={req.cnic_number}
                     className="hover:bg-amber-50/30 transition-colors group"
                   >
                     <td className="px-6 py-4">
@@ -382,7 +437,6 @@ const AdminDashboard = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      
                       <p className="text-[10px] text-gray-400">
                         {req.years_of_experience || req.experience || "N/A"}{" "}
                         experience
@@ -455,7 +509,8 @@ const AdminDashboard = () => {
                   .filter((user: any) => {
                     if (activeTab === "staff") return true;
                     if (activeTab === "all") return true;
-                    if (activeTab === "doctors" && user.role === "Doctor") return true;
+                    if (activeTab === "doctors" && user.role === "Doctor")
+                      return true;
                     return false;
                   })
                   .map((user: any) => (
@@ -465,7 +520,9 @@ const AdminDashboard = () => {
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${activeTab === "staff" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}>
+                          <div
+                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${activeTab === "staff" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}
+                          >
                             {(user.full_name || user.name || "U")
                               .split(" ")
                               .map((n: string) => n[0])
@@ -476,16 +533,20 @@ const AdminDashboard = () => {
                               {user.full_name || user.name}
                             </p>
                             <p className="text-[10px] text-gray-500 font-medium">
-                              {activeTab === "staff" ? "Receptionist" : user.role}
+                              {activeTab === "staff"
+                                ? "Receptionist"
+                                : user.role}
                             </p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-sm font-semibold text-gray-700">
-                          {activeTab === "staff" 
-                            ? (user.shiftTiming || "N/A")
-                            : user.salary ? `${user.salary} Rs.` : user.specialty || "N/A"}
+                          {activeTab === "staff"
+                            ? user.shiftTiming || "N/A"
+                            : user.salary
+                              ? `${user.salary} Rs.`
+                              : user.specialty || "N/A"}
                         </p>
                         <p className="text-[10px] text-gray-400">
                           {user.email}
@@ -508,11 +569,17 @@ const AdminDashboard = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button className="p-2 hover:bg-white rounded-lg text-blue-600 shadow-sm border border-transparent hover:border-gray-200 transition-all">
+                        <div className="flex items-center justify-end gap-2  transition-opacity">
+                          <button
+                            onClick={() => openEditModal(user)}
+                            className="p-2 hover:bg-white rounded-lg text-blue-600 shadow-sm border border-transparent hover:border-gray-200 transition-all"
+                          >
                             <Edit size={14} />
                           </button>
-                          <button className="p-2 hover:bg-white rounded-lg text-red-600 shadow-sm border border-transparent hover:border-gray-200 transition-all">
+                          <button
+                            onClick={() => handleDeleteStaff(user.id)}
+                            className="p-2 hover:bg-white rounded-lg text-red-600 shadow-sm border border-transparent hover:border-gray-200 transition-all"
+                          >
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -566,36 +633,35 @@ const AdminDashboard = () => {
                         <BookOpen size={14} className="text-blue-500" />
                         Professional Credentials
                       </h3>
-                    <div className="grid gap-4">
-                      {selectedRequestType === "doctor" ? (
-                        <>
-                          <DetailItem
-                            label="Registration #"
-                            value={selectedDoctor.registration_number}
-                          />
-                          <DetailItem
-                            label="Authority"
-                            value={selectedDoctor.registration_authority}
-                          />
-                          <DetailItem
-                            label="Qualifications"
-                            value={selectedDoctor.qualifications}
-                          />
-                          <DetailItem
-                            label="Medical College"
-                            value={selectedDoctor.medical_college}
-                          />
-                          <DetailItem
-                            label="Passing Year"
-                            value={selectedDoctor.passing_year}
-                          />
-                        </>
-                      ) : (
-                        <>
-                        </>
-                      )}
-                    </div>
-                  </section>
+                      <div className="grid gap-4">
+                        {selectedRequestType === "doctor" ? (
+                          <>
+                            <DetailItem
+                              label="Registration #"
+                              value={selectedDoctor.registration_number}
+                            />
+                            <DetailItem
+                              label="Authority"
+                              value={selectedDoctor.registration_authority}
+                            />
+                            <DetailItem
+                              label="Qualifications"
+                              value={selectedDoctor.qualifications}
+                            />
+                            <DetailItem
+                              label="Medical College"
+                              value={selectedDoctor.medical_college}
+                            />
+                            <DetailItem
+                              label="Passing Year"
+                              value={selectedDoctor.passing_year}
+                            />
+                          </>
+                        ) : (
+                          <></>
+                        )}
+                      </div>
+                    </section>
                   )}
 
                   <section>
@@ -816,6 +882,129 @@ const AdminDashboard = () => {
               >
                 {loading ? "Processing..." : "Confirm Rejection"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Staff Modal */}
+      {isEditModalOpen && selectedStaff && editFormData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl max-h-[90vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg bg-blue-600 shadow-blue-200">
+                  {selectedStaff.full_name?.charAt(0) ||
+                    selectedStaff.name?.charAt(0) ||
+                    "U"}
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-gray-900 leading-tight">
+                    Edit Staff Member
+                  </h2>
+                  <p className="text-sm font-medium text-gray-500">
+                    {selectedStaff.full_name || selectedStaff.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setSelectedStaff(null);
+                  setEditFormData(null);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-xl text-gray-400 transition-all hover:rotate-90"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto p-8 bg-white custom-scrollbar">
+              <form
+                onSubmit={handleEditSubmit}
+                className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              >
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-xs font-bold text-gray-600 uppercase tracking-wider block mb-2">
+                      Phone Number
+                    </label>
+                    <Input
+                      type="date"
+                      value={editFormData.joiningDate || ""}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          joiningDate: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <Input
+                      label="Salary"
+                      type="number"
+                      value={editFormData.salary || ""}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          salary: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <Select
+                      label="shifTiming"
+                      name="shiftTiming"
+                      value={editFormData.shiftTiming || ""}
+                      options={[
+                        { label: "Morning Shift", value: "Morning" },
+                        { label: "Evening Shift", value: "Evening" },
+                        { label: "Night Shift", value: "Night" },
+                      ]}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          shiftTiming: e.target.value,
+                        })
+                      }
+                      placeholder="e.g., Cardiology or Morning Shift"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                    />
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="col-span-full mt-6 flex items-center gap-3 pt-6 border-t border-gray-100">
+                  <Button
+                  title="Cancle"
+                    type="button"
+                    onClick={() => {
+                      setIsEditModalOpen(false);
+                      setSelectedStaff(null);
+                      setEditFormData(null);
+                    }}
+                    className="flex-1 px-6 py-3 text-gray-600 font-bold hover:bg-gray-100 rounded-2xl transition-all active:scale-95"
+                  />
+                  
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <Edit size={18} /> {loading ? "Saving..." : "Save Changes"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

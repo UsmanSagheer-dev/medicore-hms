@@ -22,7 +22,7 @@ export default function ReceptionistPendingApproval() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
+    <div className="rounded-4xl bg-linear-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-12 rounded-3xl shadow-2xl text-center relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent pointer-events-none" />
 

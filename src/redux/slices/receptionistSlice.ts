@@ -131,6 +131,35 @@ export const activeReceptionist = createAsyncThunk(
   },
 );
 
+export const updateReceptionistStaffData = createAsyncThunk(
+  "receptionist/updateStaffData",
+  async (
+    {
+      receptionistId,
+      updateData,
+    }: { receptionistId: string | number; updateData: any },
+    { rejectWithValue },
+  ) => {
+    try {
+      console.log(
+        "🔄 Updating receptionist with ID:",
+        receptionistId,
+        "Data:",
+        updateData,
+      );
+      const response = await api.put(`/receptionists/${receptionistId}`, {
+        shiftTiming: updateData.shiftTiming,
+        salary: updateData.salary,
+        joiningDate: updateData.joiningDate,
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error("❌ Update error:", error);
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  },
+);
+
 export const receptionistSlice = createSlice({
   name: "receptionist",
   initialState,
@@ -252,7 +281,9 @@ export const receptionistSlice = createSlice({
       .addCase(activeReceptionist.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.receptionists = Array.isArray(action.payload) ? action.payload : action.payload?.receptionists || [];
+        state.receptionists = Array.isArray(action.payload)
+          ? action.payload
+          : action.payload?.receptionists || [];
         console.log("📋 Active Receptionists Response:", action.payload);
       })
       .addCase(activeReceptionist.rejected, (state, action) => {
@@ -260,6 +291,31 @@ export const receptionistSlice = createSlice({
         state.error = action.payload as string;
         state.success = false;
         state.profile = null;
+      })
+      .addCase(updateReceptionistStaffData.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(updateReceptionistStaffData.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        console.log(
+          "✅ Receptionist staff data updated! Response:",
+          action.payload,
+        );
+        const updatedReceptionist = action.payload.receptionist;
+        const index = state.receptionists.findIndex(
+          (r) => r.id === updatedReceptionist.id,
+        );
+        if (index !== -1) {
+          state.receptionists[index] = updatedReceptionist;
+        }
+      })
+      .addCase(updateReceptionistStaffData.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        state.success = false;
       });
   },
 });

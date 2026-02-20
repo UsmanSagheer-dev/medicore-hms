@@ -497,20 +497,35 @@ const AdminDashboard = () => {
             <table className="w-full text-left border-collapse">
               <thead className="bg-gray-50 text-[10px] uppercase font-bold text-gray-500 tracking-widest sticky top-0 z-10">
                 <tr>
-                  <th className="px-6 py-4">Name & Role</th>
-                  <th className="px-6 py-4">Specialty/Shift</th>
-                  <th className="px-6 py-4">Salary</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+                  {activeTab === "doctors" ? (
+                    <>
+                      <th className="px-6 py-4">Name & Specialty</th>
+                      <th className="px-6 py-4">Registration & Experience</th>
+                      <th className="px-6 py-4">Clinic Details</th>
+                      <th className="px-6 py-4">Fees</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="px-6 py-4">Name & Role</th>
+                      <th className="px-6 py-4">Specialty/Shift</th>
+                      <th className="px-6 py-4">Salary</th>
+                      <th className="px-6 py-4">Status</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {(activeTab === "staff" ? receptionists : staffList)
+                {(activeTab === "staff" 
+                  ? receptionists 
+                  : activeTab === "doctors" 
+                    ? activeDoctors 
+                    : staffList)
                   .filter((user: any) => {
                     if (activeTab === "staff") return true;
+                    if (activeTab === "doctors") return true;
                     if (activeTab === "all") return true;
-                    if (activeTab === "doctors" && user.role === "Doctor")
-                      return true;
                     return false;
                   })
                   .map((user: any) => (
@@ -521,7 +536,7 @@ const AdminDashboard = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${activeTab === "staff" ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"}`}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${activeTab === "staff" ? "bg-purple-100 text-purple-700" : activeTab === "doctors" ? "bg-blue-100 text-blue-700" : "bg-blue-100 text-blue-700"}`}
                           >
                             {(user.full_name || user.name || "U")
                               .split(" ")
@@ -535,39 +550,70 @@ const AdminDashboard = () => {
                             <p className="text-[10px] text-gray-500 font-medium">
                               {activeTab === "staff"
                                 ? "Receptionist"
-                                : user.role}
+                                : activeTab === "doctors"
+                                  ? user.specialization || "N/A"
+                                  : user.role}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-semibold text-gray-700">
-                          {activeTab === "staff"
-                            ? user.shiftTiming || "N/A"
-                            : user.salary
-                              ? `${user.salary} Rs.`
-                              : user.specialty || "N/A"}
-                        </p>
-                        <p className="text-[10px] text-gray-400">
-                          {user.email}
-                        </p>
-                      </td>
-                      <td>
-                        <p className="text-sm font-semibold text-gray-700">
-                          {user.salary ? `${user.salary} Rs.` : "N/A"}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold ${
-                            user.status === "Active" || activeTab === "staff"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                              : "bg-gray-100 text-gray-600 border border-gray-200"
-                          }`}
-                        >
-                          {activeTab === "staff" ? "Active" : user.status}
-                        </span>
-                      </td>
+                      {activeTab === "doctors" ? (
+                        <>
+                          <td className="px-6 py-4">
+                            <p className="text-sm font-semibold text-gray-700">
+                              {user.registration_number || "N/A"}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              {user.years_of_experience || "0"} years exp.
+                            </p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className="text-sm font-semibold text-gray-700">
+                              {user.clinic_name || "N/A"}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              {user.clinic_city || "N/A"}
+                            </p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <p className="text-sm font-semibold text-gray-700">
+                              Rs. {user.consultation_fee || "N/A"}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              Follow-up: Rs. {user.followup_fee || "N/A"}
+                            </p>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-6 py-4">
+                            <p className="text-sm font-semibold text-gray-700">
+                              {activeTab === "staff"
+                                ? user.shiftTiming || "N/A"
+                                : user.specialty || "N/A"}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              {user.email}
+                            </p>
+                          </td>
+                          <td>
+                            <p className="text-sm font-semibold text-gray-700">
+                              {user.salary ? `${user.salary} Rs.` : "N/A"}
+                            </p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold ${
+                                user.status === "Active" || activeTab === "staff"
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                                  : "bg-gray-100 text-gray-600 border border-gray-200"
+                              }`}
+                            >
+                              {activeTab === "staff" ? "Active" : user.status}
+                            </span>
+                          </td>
+                        </>
+                      )}
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2  transition-opacity">
                           <button

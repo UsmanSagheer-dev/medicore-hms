@@ -25,13 +25,14 @@ import Select from "@/components/ui/Select";
 import toast from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { updateDoctorProfile, resetDoctorState } from "@/redux/slices/doctorSlice";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDoctorOnboarding } from "@/hooks/useDoctorOnboarding";
 
 export default function DoctorOnboarding() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { error, success } = useAppSelector((state) => state.doctor);
+  const formSubmittedRef = useRef(false);
 
   const {
     step,
@@ -44,10 +45,15 @@ export default function DoctorOnboarding() {
   } = useDoctorOnboarding();
 
   useEffect(() => {
-    if (success) {
+    dispatch(resetDoctorState());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (formSubmittedRef.current && success) {
       toast.success("Doctor profile setup complete!");
       router.push("/onboarding/doctor/pending");
       dispatch(resetDoctorState());
+      formSubmittedRef.current = false;
     }
     if (error) {
       toast.error(error);
@@ -482,7 +488,12 @@ export default function DoctorOnboarding() {
             Step {step} of 7
           </span>
           <Button
-            onClick={handleNext}
+            onClick={() => {
+              if (step === 7) {
+                formSubmittedRef.current = true;
+              }
+              handleNext();
+            }}
             isLoading={loading}
             className="px-10 h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl flex items-center gap-3 text-lg font-bold shadow-xl shadow-indigo-600/30 group"
           >

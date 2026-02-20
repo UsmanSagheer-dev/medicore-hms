@@ -69,6 +69,7 @@ function Signup() {
 
     const { confirmPassword, ...registerData } = formData;
     dispatch(registerUser(registerData));
+    clearError();
   };
 
   return (

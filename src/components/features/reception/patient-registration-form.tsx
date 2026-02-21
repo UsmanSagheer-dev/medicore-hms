@@ -1,11 +1,14 @@
 "use client";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 import { Search } from "lucide-react";
 import { TokenData } from "@/types/token";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { activeDoctor } from "@/redux/slices/doctorSlice";
+import { createPatient, createPatientVisit } from "@/redux/slices/patientVisitSlice";
 
 interface PatientRegistrationFormProps {
   onRegister: (token: TokenData) => void;
@@ -28,8 +31,19 @@ function PatientRegistrationForm({
   const discountRef = useRef<HTMLInputElement>(null);
   const consultationFeeRef = useRef<HTMLInputElement>(null);
   const [paymentStatus, setPaymentStatus] = useState("pending");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleRegister = () => {
+  const dispatch = useAppDispatch();
+  const { activeDoctors } = useAppSelector((state) => state.doctor);
+  const { loading: patientLoading } = useAppSelector((state) => state.patientVisit);
+
+  useEffect(() => {
+    dispatch(activeDoctor());
+  }, [dispatch]);
+
+
+
+  const handleRegister = async () => {
     const validateField = (
       ref: React.RefObject<HTMLInputElement | HTMLSelectElement | null>,
       fieldName: string,
@@ -49,7 +63,6 @@ function PatientRegistrationForm({
     if (!validateField(genderRef, "Gender")) return;
     if (!validateField(addressRef, "Address")) return;
     if (!validateField(phoneNumberRef, "Phone Number")) return;
-    if (!validateField(selectDoctorRef, "Doctor")) return;
     if (!validateField(cnicRef, "CNIC")) return;
     if (!validateField(visitTypeRef, "Visit Type")) return;
     if (!validateField(consultationFeeRef, "Consultation Fee")) return;
@@ -71,47 +84,118 @@ function PatientRegistrationForm({
       return;
     }
 
-    const doctorElement = selectDoctorRef.current;
-    const selectedDoctorText =
-      doctorElement?.options[doctorElement.selectedIndex].text || "";
-    const roomMatch = selectedDoctorText.match(/Room: (\d+)/);
-    const roomNo = roomMatch ? roomMatch[1] : "N/A";
-    const doctorName = selectedDoctorText.split("(")[0].trim();
+    setIsSubmitting(true);
 
-    const newToken: TokenData = {
-      tokenNo: (lastTokenNo + 1).toString().padStart(2, "0"),
-      patientName: fullNameRef.current?.value || "",
-      fatherName: fatherNameRef.current?.value || "",
-      age: `${ageRef.current?.value} Years`,
-      gender: genderRef.current?.value || "",
-      cnic: cnicRef.current?.value || "",
-      doctorName: doctorName,
-      specialization: "General Physician",
-      roomNo: roomNo,
-      date: new Date().toLocaleDateString([], {
+    try {
+      const doctorId = selectDoctorRef.current?.value || "";
+      const selectedDoctor = activeDoctors.find((doc) => doc._id === doctorId);
+
+      // Step 1: Create Patient in Database
+      const patientResult = await dispatch(
+        createPatient({
+          fullName: fullNameRef.current?.value || "",
+          fatherName: fatherNameRef.current?.value || "",
+          age: parseInt(ageRef.current?.value || "0"),
+          gender: genderRef.current?.value || "",
+          cnic: cnicRef.current?.value || "",
+          phoneNumber: phoneNumberRef.current?.value || "",
+          address: addressRef.current?.value || "",
+          doctorId: doctorId,
+        })
+      );
+
+      if (patientResult.meta.requestStatus === "rejected") {
+        toast.error(patientResult.payload || "Failed to create patient");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Get patient ID from response
+      const patientId = patientResult.payload?.data?.id || patientResult.payload?._id || "";
+
+      if (!patientId) {
+        toast.error("Failed to extract patient ID from response");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Step 2: Create Patient Visit Token
+      const tokenNo = (lastTokenNo + 1).toString().padStart(2, "0");
+      const currentDate = new Date().toLocaleDateString([], {
         day: "2-digit",
         month: "short",
         year: "numeric",
-      }),
-      time: new Date().toLocaleTimeString([], {
+      });
+      const currentTime = new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
-      }),
-      fee: consultationFeeRef.current?.value || "0",
-      isPaid: paymentStatus === "paid",
-      visitType:
-        visitTypeRef.current?.value === "new"
-          ? "New"
-          : visitTypeRef.current?.value === "revisit"
-            ? "Revisit"
-            : "Follow up",
-    };
+      });
 
-    onRegister(newToken);
-    toast.success(`Token ${newToken.tokenNo} generated successfully!`);
-    handleReset();
+      // Map visit type to enum value
+      let visitTypeEnum = "NEW";
+      if (visitTypeRef.current?.value === "revisit") {
+        visitTypeEnum = "REVISIT";
+      } else if (visitTypeRef.current?.value === "followup") {
+        visitTypeEnum = "FOLLOWUP";
+      }
+
+      const newToken: TokenData = {
+        tokenNo: tokenNo,
+        patientName: fullNameRef.current?.value || "",
+        fatherName: fatherNameRef.current?.value || "",
+        age: `${ageRef.current?.value} Years`,
+        gender: genderRef.current?.value || "",
+        cnic: cnicRef.current?.value || "",
+        doctorName: selectedDoctor?.full_name || "",
+        specialization: selectedDoctor?.specialization || "General Physician",
+        roomNo: selectedDoctor?.room_number || "N/A",
+        date: currentDate,
+        time: currentTime,
+        fee: consultationFeeRef.current?.value || "0",
+        isPaid: paymentStatus === "paid",
+        visitType:
+          visitTypeRef.current?.value === "new"
+            ? "New"
+            : visitTypeRef.current?.value === "revisit"
+              ? "Revisit"
+              : "Follow up",
+      };
+
+      const visitResult = await dispatch(
+        createPatientVisit({
+          tokenNo: tokenNo,
+          patientName: fullNameRef.current?.value || "",
+          fatherName: fatherNameRef.current?.value || "",
+          age: `${ageRef.current?.value} Years`,
+          gender: genderRef.current?.value || "",
+          cnic: cnicRef.current?.value || "",
+          doctorName: selectedDoctor?.full_name || "",
+          specialization: selectedDoctor?.specialization || "General Physician",
+          roomNo: selectedDoctor?.room_number || "N/A",
+          date: currentDate,
+          time: currentTime,
+          fee: consultationFeeRef.current?.value || "0",
+          isPaid: paymentStatus === "paid",
+          visitType: visitTypeEnum as any,
+          patientId: patientId,
+          doctorId: doctorId,
+          phoneNumber: phoneNumberRef.current?.value || "",
+          address: addressRef.current?.value || "",
+          consultationFee: parseFloat(consultationFeeRef.current?.value || "0"),
+          discount: parseFloat(discountRef.current?.value || "0"),
+          paymentStatus: paymentStatus as "pending" | "paid",
+        } as any)
+      );
+
+      onRegister(newToken);
+      toast.success(`Token ${newToken.tokenNo} generated successfully!`);
+      handleReset();
+    } catch (error) {
+      toast.error("An error occurred while creating the token");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-
   const handleReset = () => {
     if (fullNameRef.current) fullNameRef.current.value = "";
     if (fatherNameRef.current) fatherNameRef.current.value = "";
@@ -137,7 +221,7 @@ function PatientRegistrationForm({
         />
       </div>
 
-      <div className="  custom-scrollbar ">
+      <div className="custom-scrollbar">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Input placeholder="Full Name" label="Full Name" ref={fullNameRef} />
           <Input
@@ -169,11 +253,10 @@ function PatientRegistrationForm({
             ref={selectDoctorRef}
             label="Select Doctor"
             placeholder="Select Doctor"
-            options={[
-              { value: "1", label: "Dr. John Doe (Room: 101)" },
-              { value: "2", label: "Dr. Jane Smith (Room: 102)" },
-              { value: "3", label: "Dr. Robert Johnson (Room: 104)" },
-            ]}
+            options={activeDoctors.map((doctor) => ({
+              value: doctor.id || "",
+              label: `${doctor.full_name} (Room: ${doctor.room_number})`,
+            }))}
           />
           <Input placeholder="CNIC" label="CNIC" ref={cnicRef} />
 
@@ -234,11 +317,21 @@ function PatientRegistrationForm({
       </div>
 
       <div className="mt-8 pt-4 border-t border-gray-100 flex justify-end gap-4 shrink-0">
-        <Button variant="secondary" size="md" onClick={handleReset}>
+        <Button 
+          variant="secondary" 
+          size="md" 
+          onClick={handleReset} 
+          disabled={isSubmitting || patientLoading}
+        >
           Reset
         </Button>
-        <Button variant="primary" size="md" onClick={handleRegister}>
-          Generate Token
+        <Button 
+          variant="primary" 
+          size="md" 
+          onClick={handleRegister} 
+          disabled={isSubmitting || patientLoading}
+        >
+          {isSubmitting || patientLoading ? "Loading..." : "Generate Token"}
         </Button>
       </div>
     </div>

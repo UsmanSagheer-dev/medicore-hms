@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/lib/axios";
 
 interface DoctorProfile {
-  _id?: string;
+  id?: string;
   full_name: string;
   email: string;
   phone: string;
@@ -178,7 +178,7 @@ export const doctorSlice = createSlice({
         state.loading = false;
         state.success = true;
         state.pendingRequests = state.pendingRequests.filter(
-          (doctor) => doctor._id !== action.meta.arg,
+          (doctor) => doctor.id !== action.meta.arg,
         );
       })
       .addCase(approveDoctorRequest.rejected, (state, action) => {
@@ -195,7 +195,7 @@ export const doctorSlice = createSlice({
         state.loading = false;
         state.success = true;
         state.pendingRequests = state.pendingRequests.filter(
-          (doctor) => doctor._id !== action.meta.arg.doctorId,
+          (doctor) => doctor.id !== action.meta.arg.doctorId,
         );
       })
       .addCase(rejectDoctorRequest.rejected, (state, action) => {

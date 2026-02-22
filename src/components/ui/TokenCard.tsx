@@ -15,12 +15,15 @@ const TokenCard: React.FC<TokenData> = ({
   time,
   fee,
   isPaid,
+  visitType,
   type = "follow-up/New",
 }) => {
+  const badgeType = visitType || type;
+
   return (
     <div className="max-w-full w-full bg-white border border-black rounded-lg overflow-hidden font-sans text-black shadow-md relative print:shadow-none print:border shrink-0">
       <div className="absolute top-2 right-2 border border-black rounded-full px-2 py-0.5 text-[10px] font-bold bg-white">
-        {type}
+        {badgeType}
       </div>
 
       <div className="p-3">

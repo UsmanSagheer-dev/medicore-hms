@@ -75,7 +75,6 @@ export const createPatientVisit = createAsyncThunk(
   async (visitData: PatientVisit, { rejectWithValue }) => {
     try {
       const payload = {
-        tokenNo: visitData.tokenNo,
         visitType: visitData.visitType,
         patientId: (visitData as any).patientId,
         patientName: visitData.patientName,
@@ -90,8 +89,6 @@ export const createPatientVisit = createAsyncThunk(
         consultationFee: parseFloat(visitData.consultationFee.toString()),
         discount: parseFloat(((visitData as any).discount || "0").toString()),
         isPaid: visitData.isPaid,
-        date: visitData.date,
-        time: visitData.time,
       };
 
       const response = await api.post("/visits/generate-token", payload);
@@ -119,7 +116,7 @@ export const getTodayVisits = createAsyncThunk(
   "patientVisit/getToday",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get("/patient-visits/today");
+      const response = await api.get("/visits/today");
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -261,7 +258,7 @@ export const patientVisitSlice = createSlice({
       .addCase(getTodayVisits.fulfilled, (state, action) => {
         state.loading = false;
         const data =
-          action.payload.visits || action.payload.data || action.payload;
+          action.payload?.visits;
         state.todayVisits = Array.isArray(data) ? data : [];
       })
       .addCase(getTodayVisits.rejected, (state, action) => {

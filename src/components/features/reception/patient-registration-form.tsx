@@ -14,13 +14,11 @@ import {
 } from "@/redux/slices/patientVisitSlice";
 
 interface PatientRegistrationFormProps {
-  onRegister: (token: TokenData) => void;
-  lastTokenNo: number;
+  onRegister?: (token: TokenData) => void;
 }
 
 function PatientRegistrationForm({
   onRegister,
-  lastTokenNo,
 }: PatientRegistrationFormProps) {
   const fullNameRef = useRef<HTMLInputElement>(null);
   const fatherNameRef = useRef<HTMLInputElement>(null);
@@ -150,7 +148,6 @@ function PatientRegistrationForm({
       }
 
       // Step 2: Create Patient Visit Token
-      const tokenNo = (lastTokenNo + 1).toString().padStart(2, "0");
       const currentDate = new Date().toLocaleDateString([], {
         day: "2-digit",
         month: "short",
@@ -169,31 +166,8 @@ function PatientRegistrationForm({
         visitTypeEnum = "FOLLOWUP";
       }
 
-      const newToken: TokenData = {
-        tokenNo: tokenNo,
-        patientName: fullNameRef.current?.value || "",
-        fatherName: fatherNameRef.current?.value || "",
-        age: `${ageRef.current?.value} Years`,
-        gender: genderRef.current?.value || "",
-        cnic: cnicRef.current?.value || "",
-        doctorName: selectedDoctor?.full_name || "",
-        specialization: selectedDoctor?.specialization || "General Physician",
-        roomNo: selectedDoctor?.room_number || "N/A",
-        date: currentDate,
-        time: currentTime,
-        fee: consultationFeeRef.current?.value || "0",
-        isPaid: paymentStatus === "paid",
-        visitType:
-          visitTypeRef.current?.value === "new"
-            ? "New"
-            : visitTypeRef.current?.value === "revisit"
-              ? "Revisit"
-              : "Follow up",
-      };
-
       const visitResult = await dispatch(
         createPatientVisit({
-          tokenNo: tokenNo,
           patientName: fullNameRef.current?.value || "",
           fatherName: fatherNameRef.current?.value || "",
           age: `${ageRef.current?.value} Years`,
@@ -202,8 +176,6 @@ function PatientRegistrationForm({
           doctorName: selectedDoctor?.full_name || "",
           specialization: selectedDoctor?.specialization || "General Physician",
           roomNo: selectedDoctor?.room_number || "N/A",
-          date: currentDate,
-          time: currentTime,
           fee: consultationFeeRef.current?.value || "0",
           isPaid: paymentStatus === "paid",
           visitType: visitTypeEnum as any,
@@ -217,7 +189,47 @@ function PatientRegistrationForm({
         } as any),
       );
 
-      onRegister(newToken);
+      if (visitResult.meta.requestStatus === "rejected") {
+        toast.error((visitResult.payload as string) || "Failed to create patient visit");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const createdVisit =
+        (visitResult.payload as any)?.visit
+        {};
+
+      const resolvedTokenNo = String(createdVisit.tokenNo || "").padStart(2, "0");
+
+      const newToken: TokenData = {
+        tokenNo: resolvedTokenNo,
+        patientName: createdVisit.patientName || fullNameRef.current?.value || "",
+        fatherName: createdVisit.fatherName || fatherNameRef.current?.value || "",
+        age: createdVisit.age || `${ageRef.current?.value} Years`,
+        gender: createdVisit.gender || genderRef.current?.value || "",
+        cnic: createdVisit.cnic || cnicRef.current?.value || "",
+        doctorName: createdVisit.doctorName || selectedDoctor?.full_name || "",
+        specialization:
+          createdVisit.specialization ||
+          selectedDoctor?.specialization ||
+          "General Physician",
+        roomNo: createdVisit.roomNo || selectedDoctor?.room_number || "N/A",
+        date: createdVisit.date || currentDate,
+        time: createdVisit.time || currentTime,
+        fee: String(createdVisit.consultationFee || consultationFeeRef.current?.value || "0"),
+        isPaid: Boolean(createdVisit.isPaid ?? paymentStatus === "paid"),
+        visitType:
+          (createdVisit.visitType as TokenData["visitType"]) ||
+          (visitTypeRef.current?.value === "new"
+            ? "New"
+            : visitTypeRef.current?.value === "revisit"
+              ? "Revisit"
+              : "Follow up"),
+      };
+
+      if (onRegister) {
+        onRegister(newToken);
+      }
       toast.success(`Token ${newToken.tokenNo} generated successfully!`);
       handleReset();
     } catch (error) {

@@ -1,6 +1,6 @@
 "use client";
 import { LogOut, Settings, User } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 
 import { usePathname, useRouter } from "next/navigation";
 import Button from "../ui/Button";
@@ -12,11 +12,17 @@ const Header = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
-  // Get authenticated user from Redux
+  // Get authenticated user from Redux (already hydrated via InitializeAuth)
   const user = useAppSelector((state) => state.auth.user);
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   console.log("Authenticated User:", user);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleLogout = () => {
     dispatch(logoutUser());
@@ -50,11 +56,11 @@ const Header = () => {
     return roleMap[role?.toLowerCase()] || role || "User";
   };
 
-  const userInfo = {
+  const userInfo = useMemo(() => ({
     name: user?.name || "User",
     role: formatRole(user?.role),
     initials: getInitials(user?.name),
-  };
+  }), [user?.name, user?.role]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -105,20 +111,30 @@ const Header = () => {
       </div>
 
       <div className="flex items-center gap-6 relative" ref={dropdownRef}>
-        <div className="hidden md:flex flex-col items-end">
-          <span className="text-sm font-bold text-gray-800">
-            {userInfo.name}
-          </span>
-          <span className="text-[10px] font-black uppercase text-blue-600 tracking-tighter">
-            {userInfo.role}
-          </span>
+        <div className="hidden md:flex flex-col items-end min-h-12 justify-center">
+          {isMounted ? (
+            <>
+              <span className="text-sm font-bold text-gray-800">
+                {userInfo.name}
+              </span>
+              <span className="text-[10px] font-black uppercase text-blue-600 tracking-tighter">
+                {userInfo.role}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="text-sm font-bold text-gray-200 h-5 w-20 bg-gray-200 rounded animate-pulse"></span>
+              <span className="text-[10px] font-black uppercase text-gray-200 h-3 w-16 bg-gray-200 rounded animate-pulse mt-1"></span>
+            </>
+          )}
         </div>
 
         <Button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold border-2 border-white shadow-sm ring-1 ring-blue-50 transition-all hover:bg-blue-200 focus:outline-none"
+          className="h-10 w-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold border-2 border-white shadow-sm ring-1 ring-blue-50 transition-all hover:bg-blue-200 focus:outline-none disabled:opacity-50"
+          disabled={!isMounted}
         >
-          {userInfo.initials}
+          {isMounted ? userInfo.initials : "..."}
         </Button>
 
         {isDropdownOpen && (

@@ -62,6 +62,18 @@ export const logoutUser = createAsyncThunk(
   },
 );
 
+export const getMe = createAsyncThunk(
+  "auth/getMe",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get("/auth/me");
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  },
+);
+
 export const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -149,9 +161,36 @@ export const authSlice = createSlice({
             "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         }
       })
-      .addCase(logoutUser.rejected, (state, action) => {
+      .addCase(logoutUser.rejected, (state) => {
         state.loading = false;
-        state.error = action.payload as string;
+        state.isAuthenticated = false;
+        state.user = null;
+        state.token = null;
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("user");
+          document.cookie =
+            "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
+      })
+      .addCase(getMe.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getMe.fulfilled, (state, action) => {
+        state.loading = false;
+        const userData = action.payload.user || action.payload.data || action.payload;
+        state.user = userData;
+        state.isAuthenticated = !!userData;
+        if (typeof window !== "undefined" && userData) {
+          localStorage.setItem("user", JSON.stringify(userData));
+        }
+      })
+      .addCase(getMe.rejected, (state) => {
+        state.loading = false;
+        state.isAuthenticated = false;
+        state.user = null;
       });
   },
 });

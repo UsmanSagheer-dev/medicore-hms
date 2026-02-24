@@ -4,10 +4,12 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import TokenList from "@/components/features/doctor/token-list";
 import { Clock, User, ChevronRight, Activity, Users } from "lucide-react";
+import { useAppSelector } from "@/redux/hooks";
 
 const DoctorDashboard = () => {
   const params = useParams();
   const doctorId = params.id;
+  const { user } = useAppSelector((state) => state.auth);
 
   const [time, setTime] = useState(new Date());
 
@@ -77,7 +79,7 @@ const DoctorDashboard = () => {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-50/20">
-                <TokenList doctorId={doctorId as string} />
+                <TokenList doctorId={user?.doctor?.id} /> 
               </div>
             </div>
           </div>

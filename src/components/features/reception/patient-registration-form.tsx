@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, ChangeEvent } from "react";
 import { toast } from "react-hot-toast";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
@@ -8,16 +8,17 @@ import { Search } from "lucide-react";
 import { TokenData } from "@/types/token";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { activeDoctor } from "@/redux/slices/doctorSlice";
-import { createPatient, createPatientVisit } from "@/redux/slices/patientVisitSlice";
+import {
+  createPatient,
+  createPatientVisit,
+} from "@/redux/slices/patientVisitSlice";
 
 interface PatientRegistrationFormProps {
-  onRegister: (token: TokenData) => void;
-  lastTokenNo: number;
+  onRegister?: (token: TokenData) => void;
 }
 
 function PatientRegistrationForm({
   onRegister,
-  lastTokenNo,
 }: PatientRegistrationFormProps) {
   const fullNameRef = useRef<HTMLInputElement>(null);
   const fatherNameRef = useRef<HTMLInputElement>(null);
@@ -35,13 +36,38 @@ function PatientRegistrationForm({
 
   const dispatch = useAppDispatch();
   const { activeDoctors } = useAppSelector((state) => state.doctor);
-  const { loading: patientLoading } = useAppSelector((state) => state.patientVisit);
+  const { loading: patientLoading } = useAppSelector(
+    (state) => state.patientVisit,
+  );
 
   useEffect(() => {
     dispatch(activeDoctor());
   }, [dispatch]);
 
+  const setFeeFromDoctorAndVisitType = (doctorId: string, visitType: string) => {
+    const selectedDoctor = activeDoctors.find((doc) => doc.id === doctorId);
+    if (!consultationFeeRef.current) return;
 
+    if (!selectedDoctor) {
+      consultationFeeRef.current.value = "";
+      return;
+    }
+
+    consultationFeeRef.current.value =
+      visitType === "followup"
+        ? selectedDoctor.followup_fee || selectedDoctor.consultation_fee || ""
+        : selectedDoctor.consultation_fee || "";
+  };
+
+  const handleDoctorChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const currentVisitType = visitTypeRef.current?.value || "";
+    setFeeFromDoctorAndVisitType(e.target.value, currentVisitType);
+  };
+
+  const handleVisitTypeChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const currentDoctorId = selectDoctorRef.current?.value || "";
+    setFeeFromDoctorAndVisitType(currentDoctorId, e.target.value);
+  };
 
   const handleRegister = async () => {
     const validateField = (
@@ -63,6 +89,7 @@ function PatientRegistrationForm({
     if (!validateField(genderRef, "Gender")) return;
     if (!validateField(addressRef, "Address")) return;
     if (!validateField(phoneNumberRef, "Phone Number")) return;
+    if (!validateField(selectDoctorRef, "Select Doctor")) return;
     if (!validateField(cnicRef, "CNIC")) return;
     if (!validateField(visitTypeRef, "Visit Type")) return;
     if (!validateField(consultationFeeRef, "Consultation Fee")) return;
@@ -88,7 +115,7 @@ function PatientRegistrationForm({
 
     try {
       const doctorId = selectDoctorRef.current?.value || "";
-      const selectedDoctor = activeDoctors.find((doc) => doc._id === doctorId);
+      const selectedDoctor = activeDoctors.find((doc) => doc.id === doctorId);
 
       // Step 1: Create Patient in Database
       const patientResult = await dispatch(
@@ -101,7 +128,7 @@ function PatientRegistrationForm({
           phoneNumber: phoneNumberRef.current?.value || "",
           address: addressRef.current?.value || "",
           doctorId: doctorId,
-        })
+        }),
       );
 
       if (patientResult.meta.requestStatus === "rejected") {
@@ -111,7 +138,8 @@ function PatientRegistrationForm({
       }
 
       // Get patient ID from response
-      const patientId = patientResult.payload?.data?.id || patientResult.payload?._id || "";
+      const patientId =
+        patientResult.payload?.data?.id|| "";
 
       if (!patientId) {
         toast.error("Failed to extract patient ID from response");
@@ -120,7 +148,6 @@ function PatientRegistrationForm({
       }
 
       // Step 2: Create Patient Visit Token
-      const tokenNo = (lastTokenNo + 1).toString().padStart(2, "0");
       const currentDate = new Date().toLocaleDateString([], {
         day: "2-digit",
         month: "short",
@@ -139,31 +166,8 @@ function PatientRegistrationForm({
         visitTypeEnum = "FOLLOWUP";
       }
 
-      const newToken: TokenData = {
-        tokenNo: tokenNo,
-        patientName: fullNameRef.current?.value || "",
-        fatherName: fatherNameRef.current?.value || "",
-        age: `${ageRef.current?.value} Years`,
-        gender: genderRef.current?.value || "",
-        cnic: cnicRef.current?.value || "",
-        doctorName: selectedDoctor?.full_name || "",
-        specialization: selectedDoctor?.specialization || "General Physician",
-        roomNo: selectedDoctor?.room_number || "N/A",
-        date: currentDate,
-        time: currentTime,
-        fee: consultationFeeRef.current?.value || "0",
-        isPaid: paymentStatus === "paid",
-        visitType:
-          visitTypeRef.current?.value === "new"
-            ? "New"
-            : visitTypeRef.current?.value === "revisit"
-              ? "Revisit"
-              : "Follow up",
-      };
-
       const visitResult = await dispatch(
         createPatientVisit({
-          tokenNo: tokenNo,
           patientName: fullNameRef.current?.value || "",
           fatherName: fatherNameRef.current?.value || "",
           age: `${ageRef.current?.value} Years`,
@@ -172,8 +176,6 @@ function PatientRegistrationForm({
           doctorName: selectedDoctor?.full_name || "",
           specialization: selectedDoctor?.specialization || "General Physician",
           roomNo: selectedDoctor?.room_number || "N/A",
-          date: currentDate,
-          time: currentTime,
           fee: consultationFeeRef.current?.value || "0",
           isPaid: paymentStatus === "paid",
           visitType: visitTypeEnum as any,
@@ -184,10 +186,50 @@ function PatientRegistrationForm({
           consultationFee: parseFloat(consultationFeeRef.current?.value || "0"),
           discount: parseFloat(discountRef.current?.value || "0"),
           paymentStatus: paymentStatus as "pending" | "paid",
-        } as any)
+        } as any),
       );
 
-      onRegister(newToken);
+      if (visitResult.meta.requestStatus === "rejected") {
+        toast.error((visitResult.payload as string) || "Failed to create patient visit");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const createdVisit =
+        (visitResult.payload as any)?.visit
+        {};
+
+      const resolvedTokenNo = String(createdVisit.tokenNo || "").padStart(2, "0");
+
+      const newToken: TokenData = {
+        tokenNo: resolvedTokenNo,
+        patientName: createdVisit.patientName || fullNameRef.current?.value || "",
+        fatherName: createdVisit.fatherName || fatherNameRef.current?.value || "",
+        age: createdVisit.age || `${ageRef.current?.value} Years`,
+        gender: createdVisit.gender || genderRef.current?.value || "",
+        cnic: createdVisit.cnic || cnicRef.current?.value || "",
+        doctorName: createdVisit.doctorName || selectedDoctor?.full_name || "",
+        specialization:
+          createdVisit.specialization ||
+          selectedDoctor?.specialization ||
+          "General Physician",
+        roomNo: createdVisit.roomNo || selectedDoctor?.room_number || "N/A",
+        date: createdVisit.date || currentDate,
+        time: createdVisit.time || currentTime,
+        fee: String(createdVisit.consultationFee || consultationFeeRef.current?.value || "0"),
+        isPaid: Boolean(createdVisit.isPaid ?? paymentStatus === "paid"),
+        visitType:
+          (createdVisit.visitType as TokenData["visitType"]) ||
+          (visitTypeRef.current?.value === "new"
+            ? "New"
+            : visitTypeRef.current?.value === "revisit"
+              ? "Revisit"
+              : "Follow up"),
+      };
+
+      if (onRegister) {
+        onRegister(newToken);
+      }
       toast.success(`Token ${newToken.tokenNo} generated successfully!`);
       handleReset();
     } catch (error) {
@@ -253,6 +295,7 @@ function PatientRegistrationForm({
             ref={selectDoctorRef}
             label="Select Doctor"
             placeholder="Select Doctor"
+            onChange={handleDoctorChange}
             options={activeDoctors.map((doctor) => ({
               value: doctor.id || "",
               label: `${doctor.full_name} (Room: ${doctor.room_number})`,
@@ -264,6 +307,7 @@ function PatientRegistrationForm({
             ref={visitTypeRef}
             label="Visit Type"
             placeholder="Visit Type"
+            onChange={handleVisitTypeChange}
             options={[
               { value: "new", label: "New Case" },
               { value: "revisit", label: "Revisit" },
@@ -282,6 +326,8 @@ function PatientRegistrationForm({
             type="number"
             label="Consultation Fee"
             ref={consultationFeeRef}
+            readOnly
+            disabled
           />
 
           <div className="flex flex-col gap-2">
@@ -317,18 +363,18 @@ function PatientRegistrationForm({
       </div>
 
       <div className="mt-8 pt-4 border-t border-gray-100 flex justify-end gap-4 shrink-0">
-        <Button 
-          variant="secondary" 
-          size="md" 
-          onClick={handleReset} 
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={handleReset}
           disabled={isSubmitting || patientLoading}
         >
           Reset
         </Button>
-        <Button 
-          variant="primary" 
-          size="md" 
-          onClick={handleRegister} 
+        <Button
+          variant="primary"
+          size="md"
+          onClick={handleRegister}
           disabled={isSubmitting || patientLoading}
         >
           {isSubmitting || patientLoading ? "Loading..." : "Generate Token"}

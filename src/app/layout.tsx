@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 import { ReduxProvider } from "@/redux/provider";
+import InitializeAuth from "@/components/auth/InitializeAuth";
 
 export default function RootLayout({
   children,
@@ -34,6 +35,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <ReduxProvider>
+          <InitializeAuth />
           {!isAuthPage && !isOnboardingPage && <Header />}
           <main className="flex-1 overflow-hidden ">{children}</main>
           <Toaster position="top-right" />

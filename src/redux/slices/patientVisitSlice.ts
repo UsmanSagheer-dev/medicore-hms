@@ -47,16 +47,19 @@ const initialState: PatientVisitState = {
 // Async Thunks
 export const createPatient = createAsyncThunk(
   "patientVisit/createPatient",
-  async (patientData: {
-    fullName: string;
-    fatherName: string;
-    age: number;
-    gender: string;
-    cnic: string;
-    phoneNumber: string;
-    address: string;
-    doctorId: string;
-  }, { rejectWithValue }) => {
+  async (
+    patientData: {
+      fullName: string;
+      fatherName: string;
+      age: number;
+      gender: string;
+      cnic: string;
+      phoneNumber: string;
+      address: string;
+      doctorId: string;
+    },
+    { rejectWithValue },
+  ) => {
     try {
       const response = await api.post("/patients/register", patientData);
       console.log("Patient created successfully:", response.data);
@@ -64,7 +67,7 @@ export const createPatient = createAsyncThunk(
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
     }
-  }
+  },
 );
 
 export const createPatientVisit = createAsyncThunk(
@@ -72,7 +75,6 @@ export const createPatientVisit = createAsyncThunk(
   async (visitData: PatientVisit, { rejectWithValue }) => {
     try {
       const payload = {
-        tokenNo: visitData.tokenNo,
         visitType: visitData.visitType,
         patientId: (visitData as any).patientId,
         patientName: visitData.patientName,
@@ -87,41 +89,39 @@ export const createPatientVisit = createAsyncThunk(
         consultationFee: parseFloat(visitData.consultationFee.toString()),
         discount: parseFloat(((visitData as any).discount || "0").toString()),
         isPaid: visitData.isPaid,
-        date: visitData.date,
-        time: visitData.time,
       };
-      
+
       const response = await api.post("/visits/generate-token", payload);
       console.log("Patient visit created successfully:", response.data);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
     }
-  }
+  },
 );
 
-export const getPatientVisits = createAsyncThunk(
-  "patientVisit/getAll",
-  async (_, { rejectWithValue }) => {
+export const getVistByDoctor = createAsyncThunk(
+  "patientVisit/getByDoctor",
+  async (doctorId: string, { rejectWithValue }) => {
     try {
-      const response = await api.get("/patient-visits");
+      const response = await api.get(`/visits/doctor/${doctorId}`);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
     }
-  }
+  },
 );
 
 export const getTodayVisits = createAsyncThunk(
   "patientVisit/getToday",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get("/patient-visits/today");
+      const response = await api.get("/visits/today");
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
     }
-  }
+  },
 );
 
 export const getPatientVisitById = createAsyncThunk(
@@ -133,19 +133,25 @@ export const getPatientVisitById = createAsyncThunk(
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
     }
-  }
+  },
 );
 
 export const updatePatientVisit = createAsyncThunk(
   "patientVisit/update",
-  async ({ visitId, visitData }: { visitId: string; visitData: Partial<PatientVisit> }, { rejectWithValue }) => {
+  async (
+    {
+      visitId,
+      visitData,
+    }: { visitId: string; visitData: Partial<PatientVisit> },
+    { rejectWithValue },
+  ) => {
     try {
       const response = await api.put(`/patient-visits/${visitId}`, visitData);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
     }
-  }
+  },
 );
 
 export const deletePatientVisit = createAsyncThunk(
@@ -157,22 +163,29 @@ export const deletePatientVisit = createAsyncThunk(
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
     }
-  }
+  },
 );
 
 export const updatePaymentStatus = createAsyncThunk(
   "patientVisit/updatePaymentStatus",
-  async ({ visitId, paymentStatus }: { visitId: string; paymentStatus: "pending" | "paid" }, { rejectWithValue }) => {
+  async (
+    {
+      visitId,
+      paymentStatus,
+    }: { visitId: string; paymentStatus: "pending" | "paid" },
+    { rejectWithValue },
+  ) => {
     try {
-      const response = await api.put(`/patient-visits/${visitId}/payment`, { paymentStatus });
+      const response = await api.put(`/patient-visits/${visitId}/payment`, {
+        paymentStatus,
+      });
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
     }
-  }
+  },
 );
 
-// Slice
 export const patientVisitSlice = createSlice({
   name: "patientVisit",
   initialState,
@@ -192,7 +205,6 @@ export const patientVisitSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Create Patient
       .addCase(createPatient.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -208,7 +220,6 @@ export const patientVisitSlice = createSlice({
         state.success = false;
       })
 
-      // Create Patient Visit
       .addCase(createPatientVisit.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -226,29 +237,28 @@ export const patientVisitSlice = createSlice({
         state.success = false;
       })
 
-      // Get All Patient Visits
-      .addCase(getPatientVisits.pending, (state) => {
+      .addCase(getVistByDoctor.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(getPatientVisits.fulfilled, (state, action) => {
+      .addCase(getVistByDoctor.fulfilled, (state, action) => {
         state.loading = false;
-        const data = action.payload.visits || action.payload.data || action.payload;
+        const data = action.payload?.data || action.payload;
         state.visits = Array.isArray(data) ? data : [];
       })
-      .addCase(getPatientVisits.rejected, (state, action) => {
+      .addCase(getVistByDoctor.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
 
-      // Get Today Visits
       .addCase(getTodayVisits.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(getTodayVisits.fulfilled, (state, action) => {
         state.loading = false;
-        const data = action.payload.visits || action.payload.data || action.payload;
+        const data =
+          action.payload?.visits;
         state.todayVisits = Array.isArray(data) ? data : [];
       })
       .addCase(getTodayVisits.rejected, (state, action) => {
@@ -256,21 +266,19 @@ export const patientVisitSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // Get Patient Visit By ID
       .addCase(getPatientVisitById.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(getPatientVisitById.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentVisit = action.payload.visit || action.payload;
+        state.currentVisit = action.payload.visits || action.payload;
       })
       .addCase(getPatientVisitById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
 
-      // Update Patient Visit
       .addCase(updatePatientVisit.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -280,7 +288,9 @@ export const patientVisitSlice = createSlice({
         state.loading = false;
         state.success = true;
         const updatedVisit = action.payload.visit || action.payload;
-        const visitIndex = state.visits.findIndex((v) => v.id === updatedVisit.id);
+        const visitIndex = state.visits.findIndex(
+          (v) => v.id === updatedVisit.id,
+        );
         if (visitIndex !== -1) {
           state.visits[visitIndex] = updatedVisit;
         }
@@ -294,7 +304,6 @@ export const patientVisitSlice = createSlice({
         state.success = false;
       })
 
-      // Delete Patient Visit
       .addCase(deletePatientVisit.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -304,7 +313,9 @@ export const patientVisitSlice = createSlice({
         state.loading = false;
         state.success = true;
         state.visits = state.visits.filter((v) => v.id !== action.meta.arg);
-        state.todayVisits = state.todayVisits.filter((v) => v.id !== action.meta.arg);
+        state.todayVisits = state.todayVisits.filter(
+          (v) => v.id !== action.meta.arg,
+        );
         if (state.currentVisit?.id === action.meta.arg) {
           state.currentVisit = null;
         }
@@ -315,7 +326,6 @@ export const patientVisitSlice = createSlice({
         state.success = false;
       })
 
-      // Update Payment Status
       .addCase(updatePaymentStatus.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -325,7 +335,9 @@ export const patientVisitSlice = createSlice({
         state.loading = false;
         state.success = true;
         const updatedVisit = action.payload.visit || action.payload;
-        const visitIndex = state.visits.findIndex((v) => v.id === updatedVisit.id);
+        const visitIndex = state.visits.findIndex(
+          (v) => v.id === updatedVisit.id,
+        );
         if (visitIndex !== -1) {
           state.visits[visitIndex] = updatedVisit;
         }
@@ -341,5 +353,6 @@ export const patientVisitSlice = createSlice({
   },
 });
 
-export const { resetPatientVisitState, setCurrentVisit, addLocalVisit } = patientVisitSlice.actions;
+export const { resetPatientVisitState, setCurrentVisit, addLocalVisit } =
+  patientVisitSlice.actions;
 export default patientVisitSlice.reducer;

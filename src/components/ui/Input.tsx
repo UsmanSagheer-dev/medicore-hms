@@ -9,9 +9,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, label, error, icon, labelClassName, onChange, value, ...props }, ref) => {
-    // console.log("Input Render:", props.name, "Value:", value, "OnChange Present:", !!onChange);
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      console.log("Input.tsx: onChange fired", e.target.name, e.target.value);
       if (onChange) {
         onChange(e);
       }

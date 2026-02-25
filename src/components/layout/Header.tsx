@@ -33,9 +33,29 @@ const Header = () => {
   const getProfileRoute = () => {
     const role = user?.role?.toLowerCase();
     if (role === "admin") return "/dashboard/admin/profile";
-    if (role === "doctor") return "/dashboard/doctor/profile";
+    if (role === "doctor") {
+      const doctorId = user?.doctor?.id || user?.doctorId;
+      if (doctorId) {
+        return `/dashboard/doctor/${doctorId}/profile`;
+      }
+      return "/dashboard/doctor/profile"; 
+    }
     if (role === "receptionist") return "/dashboard/receptionist/profile";
     return "/profile";
+  };
+
+  const getDashboardRoute = () => {
+    const role = user?.role?.toLowerCase();
+    if (role === "admin") return "/dashboard/admin";
+    if (role === "doctor") {
+      const doctorId = user?.doctor?.id || user?.doctorId;
+      if (doctorId) {
+        return `/dashboard/doctor/${doctorId}`;
+      }
+      return "/dashboard/doctor"; // fallback
+    }
+    if (role === "receptionist") return "/dashboard/receptionist";
+    return "/";
   };
 
   const getInitials = (name: string) => {

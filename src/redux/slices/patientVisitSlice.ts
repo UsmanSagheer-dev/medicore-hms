@@ -82,6 +82,8 @@ export const createPatientVisit = createAsyncThunk(
         age: visitData.age,
         gender: visitData.gender,
         cnic: visitData.cnic,
+        phoneNumber: visitData.phoneNumber,
+        address: visitData.address,
         doctorId: (visitData as any).doctorId,
         doctorName: visitData.doctorName,
         specialization: visitData.specialization,
@@ -89,6 +91,9 @@ export const createPatientVisit = createAsyncThunk(
         consultationFee: parseFloat(visitData.consultationFee.toString()),
         discount: parseFloat(((visitData as any).discount || "0").toString()),
         isPaid: visitData.isPaid,
+        paymentStatus: visitData.paymentStatus,
+        date: visitData.date,
+        time: visitData.time,
       };
 
       const response = await api.post("/visits/generate-token", payload);

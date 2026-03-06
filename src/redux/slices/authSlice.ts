@@ -93,6 +93,16 @@ export const authSlice = createSlice({
       state.error = null;
       if (typeof window !== "undefined") {
         localStorage.removeItem("user");
+        document.cookie =
+          "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie =
+          "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie =
+          "doctorId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie =
+          "receptionistId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie =
+          "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       }
     },
     clearError: (state) => {
@@ -229,6 +239,21 @@ export const authSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = false;
         state.user = null;
+        state.token = null;
+        // Clear localStorage and cookies when auth check fails (token expired)
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("user");
+          document.cookie =
+            "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "doctorId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "receptionistId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
       });
   },
 });

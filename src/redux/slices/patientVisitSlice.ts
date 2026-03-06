@@ -61,7 +61,8 @@ export const createPatient = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      const response = await api.post("/patients/register", patientData);
+      console.log("Creating patient with data:", patientData);
+      const response = await api.post("/patients/register-or-get", patientData);
       console.log("Patient created successfully:", response.data);
       return response.data;
     } catch (error: any) {
@@ -95,6 +96,7 @@ export const createPatientVisit = createAsyncThunk(
         date: visitData.date,
         time: visitData.time,
       };
+      console.log("Creating patient visit with payload:", payload);
 
       const response = await api.post("/visits/generate-token", payload);
       console.log("Patient visit created successfully:", response.data);
@@ -171,6 +173,30 @@ export const deletePatientVisit = createAsyncThunk(
   },
 );
 
+export const getPatientByCNIC = createAsyncThunk(
+  "patientVisit/getByCNIC",
+  async (cnic: string, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/patients/cnic/${cnic}`);
+      console.log("Patient fetched successfully by CNIC:", response.data);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  },
+);
+
+export const getVistiByPatientId = createAsyncThunk(
+  "patientVisit/getByPatientId",
+  async (patientId: string, { rejectWithValue }) => {
+    try {      const response = await api.get(`/visits/patient/${patientId}`);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  },
+);
+
 export const updatePaymentStatus = createAsyncThunk(
   "patientVisit/updatePaymentStatus",
   async (
@@ -233,8 +259,12 @@ export const patientVisitSlice = createSlice({
       .addCase(createPatientVisit.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.visits.unshift(action.payload.visit);
-        state.todayVisits.unshift(action.payload.visit);
+        const visit = action.payload?.data || action.payload?.visit || action.payload;
+        console.log("Visit added to state:", visit);
+        if (visit && visit.id) {
+          state.visits.unshift(visit);
+          state.todayVisits.unshift(visit);
+        }
       })
       .addCase(createPatientVisit.rejected, (state, action) => {
         state.loading = false;
@@ -329,6 +359,32 @@ export const patientVisitSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
         state.success = false;
+      })
+      .addCase(getPatientByCNIC.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getPatientByCNIC.fulfilled, (state, action) => {
+        state.loading = false;
+        state.currentVisit = action.payload.patient || action.payload;
+      })
+      .addCase(getPatientByCNIC.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(getVistiByPatientId.pending, (state) => {
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(getVistiByPatientId.fulfilled, (state, action) => {
+        state.loading = false;
+        // Don't overwrite visits array, just store in currentVisit if needed
+        // const visits = action.payload.visits || action.payload.data || action.payload;
+        // state.visits = Array.isArray(visits) ? visits : [];
+      })
+      .addCase(getVistiByPatientId.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
       })
 
       .addCase(updatePaymentStatus.pending, (state) => {

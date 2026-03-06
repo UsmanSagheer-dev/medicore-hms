@@ -2,12 +2,11 @@
 import Link from "next/link";
 import { Mail, Lock, LogIn } from "lucide-react";
 import Input from "@/components/ui/Input";
-import { useDispatch } from "react-redux";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
-import { loginUser, clearError, getMe } from "@/redux/slices/authSlice";
+import { loginUser, clearError, getMe, logout } from "@/redux/slices/authSlice";
 
 import Button from "@/components/ui/Button";
 
@@ -17,7 +16,8 @@ function Login() {
   const { loading, error, isAuthenticated, user } = useAppSelector(
     (state) => state.auth,
   );
-  const hasAttemptedFetch = useRef(false);
+  const hasVerifiedAuth = useRef(false);
+  const [authVerified, setAuthVerified] = useState(false);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -25,47 +25,58 @@ function Login() {
   });
 
   useEffect(() => {
-    const handleRedirect = async () => {
+    const verifyAuth = async () => {
+      if (hasVerifiedAuth.current) return;
+
       if (isAuthenticated && user) {
-        const role = user.role?.toLowerCase();
-        if (role === "doctor") {
-          let doctorId = user.doctor?.id || user.doctorId;
-
-          if (!doctorId && !hasAttemptedFetch.current) {
-            hasAttemptedFetch.current = true;
-            try {
-              await dispatch(getMe()).unwrap();
-              return;
-            } catch (e) {
-              console.log("Failed to fetch user data");
-            }
-          }
-
-          if (doctorId) {
-            window.location.href = `/dashboard/doctor/${doctorId}`;
-            toast.success(`Welcome back, ${user.name}`);
-          } else {
-            router.push("/onboarding/doctor/pending");
-            dispatch(clearError());
-          }
-        } else if (role === "receptionist") {
-          const receptionistId = user.receptionist?.id || user.receptionistId;
-          if (receptionistId) {
-            window.location.href = `/dashboard/${role}`;
-            toast.success(`Welcome back, ${user.name}`);
-          } else {
-            router.push("/onboarding/receptionist/pending");
-            dispatch(clearError());
-          }
-        } else {
-          window.location.href = `/dashboard/${role}`;
-          toast.success(`Welcome back, ${user.name}`);
+        hasVerifiedAuth.current = true;
+        try {
+          await dispatch(getMe()).unwrap();
+          setAuthVerified(true);
+        } catch (e) {
+          console.log("Auth verification failed - clearing stale data");
+          dispatch(logout());
+          setAuthVerified(false);
         }
       }
     };
 
+    verifyAuth();
+  }, [dispatch, isAuthenticated, user]);
+
+  useEffect(() => {
+    if (!authVerified || !isAuthenticated || !user) return;
+
+    const handleRedirect = () => {
+      const role = user.role?.toLowerCase();
+      if (role === "doctor") {
+        const doctorId = user.doctor?.id;
+        console.log("Doctor ID for redirection:", doctorId);
+
+        if (doctorId) {
+          window.location.href = `/dashboard/doctor/${doctorId}`;
+          toast.success(`Welcome back, ${user.name}`);
+        } else {
+          router.push("/onboarding/doctor/pending");
+          dispatch(clearError());
+        }
+      } else if (role === "receptionist") {
+        const receptionistId = user.receptionist?.id;
+        if (receptionistId) {
+          window.location.href = `/dashboard/${role}`;
+          toast.success(`Welcome back, ${user.name}`);
+        } else {
+          router.push("/onboarding/receptionist/pending");
+          dispatch(clearError());
+        }
+      } else {
+        window.location.href = `/dashboard/${role}`;
+        toast.success(`Welcome back, ${user.name}`);
+      }
+    };
+
     handleRedirect();
-  }, [isAuthenticated, user]);
+  }, [authVerified, isAuthenticated, user, router, dispatch]);
 
   useEffect(() => {
     if (error) {

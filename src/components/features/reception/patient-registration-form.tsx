@@ -2,7 +2,7 @@
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
-import { Search } from "lucide-react";
+import { Search, CheckCircle, Loader2 } from "lucide-react";
 import { TokenData } from "@/types/token";
 import { usePatientRegistrationForm } from "@/hooks/usePatientRegistrationForm";
 
@@ -26,16 +26,22 @@ function PatientRegistrationForm({
       visitTypeRef,
       discountRef,
       consultationFeeRef,
+      searchCnicRef,
     },
     paymentStatus,
     setPaymentStatus,
     isSubmitting,
+    searchCnic,
+    patientFound,
+    searchLoading,
     activeDoctors,
     patientLoading,
     handleDoctorChange,
     handleVisitTypeChange,
     handleRegister,
     handleReset,
+    handleSearchCnicChange,
+    handleSearchKeyDown,
   } = usePatientRegistrationForm({ onRegister });
 
 
@@ -43,10 +49,27 @@ function PatientRegistrationForm({
     <div className="w-full h-full p-6 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
       <div className="mb-6 shrink-0">
         <Input
-          placeholder="Search Old Patient / CNIC"
+          ref={searchCnicRef}
+          placeholder="Search Old Patient / CNIC (Press Enter to fill)"
           icon={<Search />}
+          suffixIcon={
+            searchLoading ? (
+              <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+            ) : patientFound ? (
+              <CheckCircle className="w-5 h-5 text-green-500" />
+            ) : null
+          }
           className="w-full bg-gray-50/50"
+          value={searchCnic}
+          onChange={handleSearchCnicChange}
+          onKeyDown={handleSearchKeyDown}
+          maxLength={13}
         />
+        {patientFound && (
+          <p className="text-sm text-green-600 mt-1">
+            Patient found! Press Enter to auto-fill the form.
+          </p>
+        )}
       </div>
 
       <div className="custom-scrollbar">
@@ -153,7 +176,7 @@ function PatientRegistrationForm({
           variant="secondary"
           size="md"
           onClick={handleReset}
-          disabled={isSubmitting || patientLoading}
+          disabled={isSubmitting}
         >
           Reset
         </Button>
@@ -161,9 +184,9 @@ function PatientRegistrationForm({
           variant="primary"
           size="md"
           onClick={handleRegister}
-          disabled={isSubmitting || patientLoading}
+          disabled={isSubmitting}
         >
-          {isSubmitting || patientLoading ? "Loading..." : "Generate Token"}
+          {isSubmitting ? "Loading..." : "Generate Token"}
         </Button>
       </div>
     </div>

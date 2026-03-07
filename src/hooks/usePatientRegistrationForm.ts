@@ -90,8 +90,15 @@ export function usePatientRegistrationForm({
         const result = await dispatch(getPatientByCNIC(cnic));
         if (result.meta.requestStatus === "fulfilled") {
           // Handle different response structures
-          const patientData = result.payload?.patient || result.payload?.data || result.payload;
-          if (patientData && (patientData.id || patientData.cnic || patientData.fullName || patientData.full_name)) {
+          const patientData =
+            result.payload?.patient || result.payload?.data || result.payload;
+          if (
+            patientData &&
+            (patientData.id ||
+              patientData.cnic ||
+              patientData.fullName ||
+              patientData.full_name)
+          ) {
             setPatientFound(true);
             setSearchedPatient(patientData);
           }
@@ -104,27 +111,39 @@ export function usePatientRegistrationForm({
     }
   };
 
-  // Handle Enter key press to auto-fill form
   const handleSearchKeyDown = async (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && patientFound && searchedPatient) {
       e.preventDefault();
       setSearchLoading(true);
-      
+
       try {
-        // Fetch visit history for the patient
-        const visitResult = await dispatch(getVistiByPatientId(searchedPatient.id));
-        
-        // Auto-fill form with patient data
-        if (fullNameRef.current) fullNameRef.current.value = searchedPatient.fullName || searchedPatient.full_name || "";
-        if (fatherNameRef.current) fatherNameRef.current.value = searchedPatient.fatherName || searchedPatient.father_name || "";
-        if (ageRef.current) ageRef.current.value = searchedPatient.age?.toString().replace(" Years", "") || "";
-        if (genderRef.current) genderRef.current.value = searchedPatient.gender || "";
-        if (addressRef.current) addressRef.current.value = searchedPatient.address || "";
-        if (phoneNumberRef.current) phoneNumberRef.current.value = searchedPatient.phoneNumber || searchedPatient.phone_number || "";
+        const visitResult = await dispatch(
+          getVistiByPatientId(searchedPatient.id),
+        );
+
+        if (fullNameRef.current)
+          fullNameRef.current.value =
+            searchedPatient.fullName || searchedPatient.full_name || "";
+        if (fatherNameRef.current)
+          fatherNameRef.current.value =
+            searchedPatient.fatherName || searchedPatient.father_name || "";
+        if (ageRef.current)
+          ageRef.current.value =
+            searchedPatient.age?.toString().replace(" Years", "") || "";
+        if (genderRef.current)
+          genderRef.current.value = searchedPatient.gender || "";
+        if (addressRef.current)
+          addressRef.current.value = searchedPatient.address || "";
+        if (phoneNumberRef.current)
+          phoneNumberRef.current.value =
+            searchedPatient.phoneNumber || searchedPatient.phone_number || "";
         if (cnicRef.current) cnicRef.current.value = searchedPatient.cnic || "";
-        
+
         // If there's visit history, set visit type to revisit
-        if (visitResult.meta.requestStatus === "fulfilled" && visitResult.payload?.visits?.length > 0) {
+        if (
+          visitResult.meta.requestStatus === "fulfilled" &&
+          visitResult.payload?.visits?.length > 0
+        ) {
           if (visitTypeRef.current) visitTypeRef.current.value = "revisit";
           // Update consultation fee based on revisit
           const currentDoctorId = selectDoctorRef.current?.value || "";
@@ -132,7 +151,7 @@ export function usePatientRegistrationForm({
             setFeeFromDoctorAndVisitType(currentDoctorId, "revisit");
           }
         }
-        
+
         toast.success("Patient data loaded successfully!");
       } catch (error) {
         toast.error("Error loading patient data");
@@ -157,9 +176,7 @@ export function usePatientRegistrationForm({
     return true;
   };
 
-  // Main registration handler
   const handleRegister = async () => {
-    // Validate all fields
     if (!validateField(fullNameRef, "Full Name")) return;
     if (!validateField(fatherNameRef, "Father Name")) return;
     if (!validateField(ageRef, "Age")) return;
@@ -171,7 +188,6 @@ export function usePatientRegistrationForm({
     if (!validateField(visitTypeRef, "Visit Type")) return;
     if (!validateField(consultationFeeRef, "Consultation Fee")) return;
 
-    // Validate CNIC length
     if (cnicRef.current?.value.length !== 13) {
       toast.error("Please enter a valid CNIC (13 digits)");
       cnicRef.current?.focus();
@@ -179,7 +195,6 @@ export function usePatientRegistrationForm({
       return;
     }
 
-    // Validate phone number length
     if (phoneNumberRef.current?.value.length !== 11) {
       toast.error("Please enter a valid Phone Number (11 digits)");
       phoneNumberRef.current?.focus();
@@ -211,25 +226,35 @@ export function usePatientRegistrationForm({
       );
 
       if (patientResult.meta.requestStatus === "rejected") {
-        const errorMessage = typeof patientResult.payload === 'string' 
-          ? patientResult.payload 
-          : (patientResult.payload as any)?.message || "Failed to create/update patient";
+        const errorMessage =
+          typeof patientResult.payload === "string"
+            ? patientResult.payload
+            : (patientResult.payload as any)?.message ||
+              "Failed to create/update patient";
         toast.error(errorMessage);
+        setIsSubmitting(false);
+        return;
+      }
+
+      if ((patientResult.payload as any)?.mismatchWarning) {
+        toast.error(
+          (patientResult.payload as any)?.warningMessage ||
+            "CNIC is already registered with a different name",
+        );
         setIsSubmitting(false);
         return;
       }
 
       console.log("Patient Result Payload:", patientResult.payload);
 
-      // Get patient ID from response - handle both create and update response structures
-      const patientId = 
-        patientResult.payload?.data?.id || 
-        patientResult.payload?.patient?.id || 
-        patientResult.payload?.id || 
-        "";
+      const patientId = patientResult.payload?.data?.id || "";
+      console.log("Extracted Patient ID:", patientId);
 
       if (!patientId) {
-        console.error("Patient ID not found in response:", patientResult.payload);
+        console.error(
+          "Patient ID not found in response:",
+          patientResult.payload,
+        );
         toast.error("Failed to extract patient ID from response");
         setIsSubmitting(false);
         return;
@@ -291,10 +316,11 @@ export function usePatientRegistrationForm({
       console.log("Visit Result:", visitResult.payload);
 
       // Backend response structure: {success: true, message: '...', data: {...}}
-      const createdVisit = (visitResult.payload as any)?.data || (visitResult.payload as any) || {};
+      const createdVisit = (visitResult.payload as any)?.data || {};
 
       // Try to get token number from different possible response structures
-      const tokenNo = createdVisit.tokenNo || createdVisit.token_no || createdVisit.id || "00";
+      const tokenNo = createdVisit.tokenNo || "00";
+      
 
       console.log("Created Visit Data:", createdVisit);
       console.log("Token No:", tokenNo);
@@ -325,7 +351,8 @@ export function usePatientRegistrationForm({
         ),
         isPaid: Boolean(createdVisit.isPaid ?? paymentStatus === "paid"),
         visitType: (() => {
-          const vt = createdVisit.visitType || visitTypeRef.current?.value || "new";
+          const vt =
+            createdVisit.visitType || visitTypeRef.current?.value || "new";
           if (vt === "NEW" || vt === "new") return "New";
           if (vt === "REVISIT" || vt === "revisit") return "Revisit";
           if (vt === "FOLLOWUP" || vt === "followup") return "Follow up";

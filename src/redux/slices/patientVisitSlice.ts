@@ -33,6 +33,8 @@ interface PatientVisitState {
   loading: boolean;
   error: string | null;
   success: boolean;
+  mismatchWarning: boolean;
+  warningMessage: string | null;
 }
 
 const initialState: PatientVisitState = {
@@ -42,6 +44,8 @@ const initialState: PatientVisitState = {
   loading: false,
   error: null,
   success: false,
+  mismatchWarning: false,
+  warningMessage: null,
 };
 
 // Async Thunks
@@ -63,7 +67,16 @@ export const createPatient = createAsyncThunk(
     try {
       console.log("Creating patient with data:", patientData);
       const response = await api.post("/patients/register-or-get", patientData);
-      console.log("Patient created successfully:", response.data);
+      console.log("Patient response:", response.data);
+
+      if (response.data.isExisting && !response.data.detailsMatch) {
+        return {
+          ...response.data,
+          mismatchWarning: true,
+          warningMessage: `⚠️ This CNIC is already registered with name "${response.data.existingDetails?.fullName}". You entered "${response.data.providedDetails?.fullName}".`,
+        };
+      }
+
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -189,7 +202,8 @@ export const getPatientByCNIC = createAsyncThunk(
 export const getVistiByPatientId = createAsyncThunk(
   "patientVisit/getByPatientId",
   async (patientId: string, { rejectWithValue }) => {
-    try {      const response = await api.get(`/visits/patient/${patientId}`);
+    try {
+      const response = await api.get(`/visits/patient/${patientId}`);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -225,6 +239,12 @@ export const patientVisitSlice = createSlice({
       state.loading = false;
       state.error = null;
       state.success = false;
+      state.mismatchWarning = false;
+      state.warningMessage = null;
+    },
+    clearMismatchWarning: (state) => {
+      state.mismatchWarning = false;
+      state.warningMessage = null;
     },
     setCurrentVisit: (state, action: PayloadAction<PatientVisit | null>) => {
       state.currentVisit = action.payload;
@@ -240,15 +260,30 @@ export const patientVisitSlice = createSlice({
         state.loading = true;
         state.error = null;
         state.success = false;
+        state.mismatchWarning = false;
+        state.warningMessage = null;
       })
       .addCase(createPatient.fulfilled, (state, action) => {
         state.loading = false;
-        state.success = true;
+
+        // Check for CNIC mismatch warning
+        if (action.payload?.mismatchWarning) {
+          state.mismatchWarning = true;
+          state.warningMessage = action.payload.warningMessage;
+          state.error = action.payload.warningMessage;
+          state.success = false;
+        } else {
+          state.success = true;
+          state.mismatchWarning = false;
+          state.warningMessage = null;
+        }
       })
       .addCase(createPatient.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
         state.success = false;
+        state.mismatchWarning = false;
+        state.warningMessage = null;
       })
 
       .addCase(createPatientVisit.pending, (state) => {
@@ -259,7 +294,8 @@ export const patientVisitSlice = createSlice({
       .addCase(createPatientVisit.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        const visit = action.payload?.data || action.payload?.visit || action.payload;
+        const visit =
+          action.payload?.data || action.payload?.visit || action.payload;
         console.log("Visit added to state:", visit);
         if (visit && visit.id) {
           state.visits.unshift(visit);
@@ -292,8 +328,7 @@ export const patientVisitSlice = createSlice({
       })
       .addCase(getTodayVisits.fulfilled, (state, action) => {
         state.loading = false;
-        const data =
-          action.payload?.visits;
+        const data = action.payload?.visits;
         state.todayVisits = Array.isArray(data) ? data : [];
       })
       .addCase(getTodayVisits.rejected, (state, action) => {
@@ -378,9 +413,6 @@ export const patientVisitSlice = createSlice({
       })
       .addCase(getVistiByPatientId.fulfilled, (state, action) => {
         state.loading = false;
-        // Don't overwrite visits array, just store in currentVisit if needed
-        // const visits = action.payload.visits || action.payload.data || action.payload;
-        // state.visits = Array.isArray(visits) ? visits : [];
       })
       .addCase(getVistiByPatientId.rejected, (state, action) => {
         state.loading = false;
@@ -414,6 +446,10 @@ export const patientVisitSlice = createSlice({
   },
 });
 
-export const { resetPatientVisitState, setCurrentVisit, addLocalVisit } =
-  patientVisitSlice.actions;
+export const {
+  resetPatientVisitState,
+  setCurrentVisit,
+  addLocalVisit,
+  clearMismatchWarning,
+} = patientVisitSlice.actions;
 export default patientVisitSlice.reducer;

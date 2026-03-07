@@ -4,16 +4,22 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   icon?: React.ReactNode;
+  suffixIcon?: React.ReactNode;
   labelClassName?: string;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, label, error, icon, labelClassName, onChange, value, ...props }, ref) => {
-    // console.log("Input Render:", props.name, "Value:", value, "OnChange Present:", !!onChange);
+  ({ className, type, label, error, icon, suffixIcon, labelClassName, onChange, onKeyDown, value, ...props }, ref) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      console.log("Input.tsx: onChange fired", e.target.name, e.target.value);
       if (onChange) {
         onChange(e);
+      }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (onKeyDown) {
+        onKeyDown(e);
       }
     };
 
@@ -37,11 +43,17 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               error
                 ? "border-red-500 focus:ring-red-500"
                 : "border-gray-300 focus:ring-[#2C4D9C]"
-            } ${icon ? "pl-10 pr-3" : "px-3"} ${className || ""}`}
+            } ${icon ? "pl-10" : "px-3"} ${suffixIcon ? "pr-10" : "pr-3"} ${className || ""}`}
             onChange={handleChange}
+            onKeyDown={handleKeyDown}
             ref={ref}
             {...props}
           />
+          {suffixIcon && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+              {suffixIcon}
+            </div>
+          )}
         </div>
         {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
       </div>

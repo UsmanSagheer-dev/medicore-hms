@@ -1,62 +1,91 @@
-
 "use client";
 import Link from "next/link";
 import { Mail, Lock, LogIn } from "lucide-react";
 import Input from "@/components/ui/Input";
-import { useDispatch } from "react-redux";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
-import { loginUser, clearError } from "@/redux/slices/authSlice";
+import { loginUser, clearError, getMe, logout } from "@/redux/slices/authSlice";
 
 import Button from "@/components/ui/Button";
-
 
 function Login() {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const {loading,error,isAuthenticated,user} = useAppSelector((state)=>state.auth);
+  const { loading, error, isAuthenticated, user } = useAppSelector(
+    (state) => state.auth,
+  );
+  const hasVerifiedAuth = useRef(false);
+  const [authVerified, setAuthVerified] = useState(false);
 
-  const [formData,setFormData] = useState({
-    email:'',
-    password:''
-  })
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
 
   useEffect(() => {
-    if (isAuthenticated && user) {
+    const verifyAuth = async () => {
+      if (hasVerifiedAuth.current) return;
+
+      if (isAuthenticated && user) {
+        hasVerifiedAuth.current = true;
+        try {
+          await dispatch(getMe()).unwrap();
+          setAuthVerified(true);
+        } catch (e) {
+          console.log("Auth verification failed - clearing stale data");
+          dispatch(logout());
+          setAuthVerified(false);
+        }
+      }
+    };
+
+    verifyAuth();
+  }, [dispatch, isAuthenticated, user]);
+
+  useEffect(() => {
+    if (!authVerified || !isAuthenticated || !user) return;
+
+    const handleRedirect = () => {
       const role = user.role?.toLowerCase();
-      if (role === 'doctor') {
-        if (user.doctorId || user.id) {
-          window.location.href = `/dashboard/doctor/${user.doctorId || user.id}`;
-          toast.success(`Welcome ${user.name}`);
+      if (role === "doctor") {
+        const doctorId = user.doctor?.id;
+        console.log("Doctor ID for redirection:", doctorId);
+
+        if (doctorId) {
+          window.location.href = `/dashboard/doctor/${doctorId}`;
+          toast.success(`Welcome back, ${user.name}`);
         } else {
           router.push("/onboarding/doctor/pending");
           dispatch(clearError());
         }
-      } else if (role === 'receptionist') {
-        if (user.receptionistId || user.id) {
+      } else if (role === "receptionist") {
+        const receptionistId = user.receptionist?.id;
+        if (receptionistId) {
           window.location.href = `/dashboard/${role}`;
-          toast.success(`Welcome ${user.name}`);
+          toast.success(`Welcome back, ${user.name}`);
         } else {
           router.push("/onboarding/receptionist/pending");
           dispatch(clearError());
         }
       } else {
         window.location.href = `/dashboard/${role}`;
-        toast.success(`Welcome ${user.name}`);
+        toast.success(`Welcome back, ${user.name}`);
       }
-    }
-  }, [isAuthenticated, user]);
+    };
 
-  useEffect(()=>{
-    if(error){
+    handleRedirect();
+  }, [authVerified, isAuthenticated, user, router, dispatch]);
+
+  useEffect(() => {
+    if (error) {
       toast.error(error);
     }
     return () => {
       dispatch(clearError());
-    }
-  },[error, dispatch])
+    };
+  }, [error, dispatch]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -76,7 +105,7 @@ function Login() {
         <p className="text-white/70">Please enter your details to sign in</p>
       </div>
 
-      <form className="space-y-6"onSubmit={handleSubmit}>
+      <form className="space-y-6" onSubmit={handleSubmit}>
         <div className="space-y-2">
           <label className="text-sm font-medium text-white/90 ml-1">
             Email Address
@@ -129,8 +158,8 @@ function Login() {
           </label>
         </div>
 
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           isLoading={loading}
           className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
         >

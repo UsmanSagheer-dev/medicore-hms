@@ -93,6 +93,16 @@ export const authSlice = createSlice({
       state.error = null;
       if (typeof window !== "undefined") {
         localStorage.removeItem("user");
+        document.cookie =
+          "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie =
+          "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie =
+          "doctorId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie =
+          "receptionistId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie =
+          "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       }
     },
     clearError: (state) => {
@@ -116,6 +126,14 @@ export const authSlice = createSlice({
           if (userData.role) {
             document.cookie = `userRole=${userData.role.toLowerCase()}; path=/; max-age=604800; SameSite=Lax`;
           }
+          const doctorId = userData.doctor?.id;
+          if (doctorId) {
+            document.cookie = `doctorId=${doctorId}; path=/; max-age=604800; SameSite=Lax`;
+          }
+          const receptionistId = userData.receptionist?.id || userData.receptionistId;
+          if (receptionistId) {
+            document.cookie = `receptionistId=${receptionistId}; path=/; max-age=604800; SameSite=Lax`;
+          }
         }
       })
       .addCase(registerUser.rejected, (state, action) => {
@@ -137,13 +155,20 @@ export const authSlice = createSlice({
           if (userData.role) {
             document.cookie = `userRole=${userData.role.toLowerCase()}; path=/; max-age=604800; SameSite=Lax`;
           }
+          const doctorId = userData.doctor?.id || userData.doctorId;
+          if (doctorId) {
+            document.cookie = `doctorId=${doctorId}; path=/; max-age=604800; SameSite=Lax`;
+          }
+          const receptionistId = userData.receptionist?.id || userData.receptionistId;
+          if (receptionistId) {
+            document.cookie = `receptionistId=${receptionistId}; path=/; max-age=604800; SameSite=Lax`;
+          }
         }
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
-      // Logout cases
       .addCase(logoutUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -159,6 +184,12 @@ export const authSlice = createSlice({
             "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
           document.cookie =
             "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "doctorId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "receptionistId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         }
       })
       .addCase(logoutUser.rejected, (state) => {
@@ -172,6 +203,12 @@ export const authSlice = createSlice({
             "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
           document.cookie =
             "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "doctorId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "receptionistId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         }
       })
       .addCase(getMe.pending, (state) => {
@@ -185,12 +222,38 @@ export const authSlice = createSlice({
         state.isAuthenticated = !!userData;
         if (typeof window !== "undefined" && userData) {
           localStorage.setItem("user", JSON.stringify(userData));
+          const doctorId = userData.doctor?.id;
+          if (doctorId) {
+            document.cookie = `doctorId=${doctorId}; path=/; max-age=604800; SameSite=Lax`;
+          }
+          const receptionistId = userData.receptionist?.id || userData.receptionistId;
+          if (receptionistId) {
+            document.cookie = `receptionistId=${receptionistId}; path=/; max-age=604800; SameSite=Lax`;
+          }
+          if (userData.role) {
+            document.cookie = `userRole=${userData.role.toLowerCase()}; path=/; max-age=604800; SameSite=Lax`;
+          }
         }
       })
       .addCase(getMe.rejected, (state) => {
         state.loading = false;
         state.isAuthenticated = false;
         state.user = null;
+        state.token = null;
+        // Clear localStorage and cookies when auth check fails (token expired)
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("user");
+          document.cookie =
+            "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "doctorId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "receptionistId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          document.cookie =
+            "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        }
       });
   },
 });

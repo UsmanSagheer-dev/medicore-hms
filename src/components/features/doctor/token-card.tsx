@@ -1,6 +1,9 @@
 "use client";
 
 import { Clock } from "lucide-react";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { callPatient } from "@/redux/slices/patientVisitSlice";
+import { useRouter, useParams } from "next/navigation";
 
 interface TokenCardProps {
   token: {
@@ -14,6 +17,26 @@ interface TokenCardProps {
 }
 
 const DoctorTokenCard = ({ token }: TokenCardProps) => {
+  const dispatch = useAppDispatch();
+  const router = useRouter();
+  const params = useParams();
+  const doctorId = params.id as string;
+  const { loading } = useAppSelector((state) => state.patientVisit);
+
+  const handleCallPatient = async () => {
+    router.push(`/dashboard/doctor/${doctorId}/consultation/${token.id}`);
+    
+    try {
+      await dispatch(callPatient(token.id)).unwrap();
+    } catch (error) {
+      console.error("Error calling patient:", error);
+    }
+  };
+
+  const handleResumeConsultation = () => {
+    router.push(`/dashboard/doctor/${doctorId}/consultation/${token.id}`);
+  };
+
   const getVisitTypeStyles = (type: string) => {
     switch (type) {
       case "New":
@@ -63,14 +86,35 @@ const DoctorTokenCard = ({ token }: TokenCardProps) => {
         </div>
 
         <div className="flex items-center gap-3">
-          {token.status === "waiting" ? (
-            <button className="px-5 py-2 bg-gray-900 hover:bg-blue-600 text-white rounded-lg text-sm font-bold transition-colors">
-              Call Patient
+          {token.status === "WAITING" ? (
+            <button 
+              onClick={handleCallPatient}
+              disabled={loading}
+              className="px-5 py-2 bg-gray-900 hover:bg-blue-600 text-white rounded-lg text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? "Calling..." : "Call Patient"}
             </button>
+          ) : token.status === "INPROGRESS" ? (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100 font-bold text-xs">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                IN PROGRESS
+              </div>
+              <button
+                onClick={handleResumeConsultation}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition-colors"
+              >
+                Resume
+              </button>
+            </div>
+          ) : token.status === "COMPLETED" ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 font-bold text-xs">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+              COMPLETED
+            </div>
           ) : (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100 font-bold text-xs">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-              IN PROGRESS
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg border border-gray-200 font-bold text-xs uppercase">
+              {token.status}
             </div>
           )}
         </div>

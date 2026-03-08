@@ -80,7 +80,8 @@ function Login() {
 
   useEffect(() => {
     if (error) {
-      toast.error(error);
+      const errorMsg = typeof error === 'string' ? error : (error as any)?.message || 'An error occurred';
+      toast.error(errorMsg);
     }
     return () => {
       dispatch(clearError());

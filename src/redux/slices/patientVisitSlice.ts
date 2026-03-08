@@ -148,7 +148,7 @@ export const getPatientVisitById = createAsyncThunk(
   "patientVisit/getById",
   async (visitId: string, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/patient-visits/${visitId}`);
+      const response = await api.get(`/visits/${visitId}`);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -224,6 +224,42 @@ export const updatePaymentStatus = createAsyncThunk(
       const response = await api.put(`/patient-visits/${visitId}/payment`, {
         paymentStatus,
       });
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  },
+);
+
+
+export const callPatient = createAsyncThunk(
+  "patientVisit/callPatient",
+  async (visitId: string, { rejectWithValue }) => {
+    try {
+      const response = await api.put(`/visits/${visitId}/call`);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  },
+);
+
+export interface ConsultationData {
+  visitId: string;
+  symptoms?: string;
+  diagnosis?: string;
+  prescription?: string;
+  medicines?: any;
+  testRecommendations?: string;
+  nextFollowUp?: string;
+  notes?: string;
+}
+
+export const createConsultation = createAsyncThunk(
+  "patientVisit/createConsultation",
+  async (consultationData: ConsultationData, { rejectWithValue }) => {
+    try {
+      const response = await api.post("/consultations", consultationData);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -439,6 +475,69 @@ export const patientVisitSlice = createSlice({
         }
       })
       .addCase(updatePaymentStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        state.success = false;
+      })
+      .addCase(callPatient.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(callPatient.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        const updatedVisit = action.payload.data || action.payload.visit || action.payload;
+        const visitIndex = state.visits.findIndex(
+          (v) => v.id === updatedVisit.id,
+        );
+        if (visitIndex !== -1) {
+          state.visits[visitIndex] = updatedVisit;
+        }
+        const todayIndex = state.todayVisits.findIndex(
+          (v) => v.id === updatedVisit.id,
+        );
+        if (todayIndex !== -1) {
+          state.todayVisits[todayIndex] = updatedVisit;
+        }
+        if (state.currentVisit?.id === updatedVisit.id) {
+          state.currentVisit = updatedVisit;
+        }
+      })
+      .addCase(callPatient.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        state.success = false;
+      })
+      .addCase(createConsultation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(createConsultation.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        const consultation = action.payload.data || action.payload;
+        const updatedVisit = consultation.visit;
+        if (updatedVisit) {
+          const visitIndex = state.visits.findIndex(
+            (v) => v.id === updatedVisit.id,
+          );
+          if (visitIndex !== -1) {
+            state.visits[visitIndex] = updatedVisit;
+          }
+          const todayIndex = state.todayVisits.findIndex(
+            (v) => v.id === updatedVisit.id,
+          );
+          if (todayIndex !== -1) {
+            state.todayVisits[todayIndex] = updatedVisit;
+          }
+          if (state.currentVisit?.id === updatedVisit.id) {
+            state.currentVisit = updatedVisit;
+          }
+        }
+      })
+      .addCase(createConsultation.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
         state.success = false;

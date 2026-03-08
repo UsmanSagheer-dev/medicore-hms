@@ -56,7 +56,8 @@ export default function DoctorOnboarding() {
       formSubmittedRef.current = false;
     }
     if (error) {
-      toast.error(error);
+      const errorMsg = typeof error === 'string' ? error : (error as any)?.message || 'An error occurred';
+      toast.error(errorMsg);
     }
   }, [success, error, router, dispatch]);
 

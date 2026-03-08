@@ -33,7 +33,11 @@ export const registerUser = createAsyncThunk(
       const response = await api.post("/auth/register", userData);
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error || error.message);
+      const errorData = error.response?.data;
+      const errorMsg = typeof errorData === 'string' 
+        ? errorData 
+        : errorData?.message || errorData?.error || error.message || 'Registration failed';
+      return rejectWithValue(errorMsg);
     }
   },
 );
@@ -45,7 +49,11 @@ export const loginUser = createAsyncThunk(
       const response = await api.post("/auth/login", userData);
       return response.data;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error || error.message);
+      const errorData = error.response?.data;
+      const errorMsg = typeof errorData === 'string' 
+        ? errorData 
+        : errorData?.message || errorData?.error || error.message || 'Login failed';
+      return rejectWithValue(errorMsg);
     }
   },
 );

@@ -20,6 +20,7 @@ interface ReceptionistState {
   profile: ReceptionistProfile | null;
   pendingRequests: ReceptionistProfile[];
   receptionists: ReceptionistProfile[];
+  patientVisits: any[]; 
   loading: boolean;
   error: string | null;
   success: boolean;
@@ -32,6 +33,7 @@ const initialState: ReceptionistState = {
   loading: false,
   error: null,
   success: false,
+  patientVisits: [],
 };
 
 export const updateReceptionistProfile = createAsyncThunk(
@@ -155,6 +157,19 @@ export const updateReceptionistStaffData = createAsyncThunk(
       return response.data;
     } catch (error: any) {
       console.error("❌ Update error:", error);
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  },
+);
+
+
+export const todayPatientVisits= createAsyncThunk(
+  "receptionist/fetchTodayPatientVisits",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get("/visits/today");
+      return response.data;
+    } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
     }
   },
@@ -316,7 +331,27 @@ export const receptionistSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
         state.success = false;
+      })
+      .addCase(todayPatientVisits.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(todayPatientVisits.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        console.log("📋 Today's Patient Visits Response:", action.payload);
+        state.patientVisits = Array.isArray(action.payload)
+          ? action.payload
+          : action.payload?.data || [];
+        console.log("📋 State patientVisits:", state.patientVisits);
+      })
+      .addCase(todayPatientVisits.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        state.success = false;
       });
+
   },
 });
 

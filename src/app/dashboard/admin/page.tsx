@@ -35,6 +35,7 @@ import {
   rejectReceptionistRequest,
   activeReceptionist,
   updateReceptionistStaffData,
+  todayPatientVisits,
 } from "@/redux/slices/receptionistSlice";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
@@ -61,7 +62,9 @@ const AdminDashboard = () => {
     pendingRequests: receptionistPendingRequests,
     loading: receptionistLoading,
     receptionists,
+    patientVisits,
   } = useSelector((state: RootState) => state.receptionist);
+
 
   useEffect(() => {
     dispatch(pendingDoctorRequests());
@@ -74,6 +77,11 @@ const AdminDashboard = () => {
     dispatch(activeReceptionist() as any);
     console.log("🔄 Dispatching pendingReceptionistRequests");
     console.log(activeReceptionist);
+  }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(todayPatientVisits());
+    console.log("🔄 Dispatching todayPatientVisits", todayPatientVisits);
   }, [dispatch]);
 
   const requests = Array.isArray(pendingRequests) ? pendingRequests : [];
@@ -108,7 +116,7 @@ const AdminDashboard = () => {
     },
     {
       label: "Total Patients",
-      value: "1,280",
+      value: patientVisits?.length || "0",
       icon: Users,
       color: "text-emerald-600",
       bg: "bg-emerald-50",

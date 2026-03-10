@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 
-import { useParams } from "next/navigation";
+import { useParams, redirect } from "next/navigation";
 import TokenList from "@/components/features/doctor/token-list";
+import Sidebar from "@/components/layout/Sidebar";
 import { Clock, User, ChevronRight, Activity, Users } from "lucide-react";
 import { useAppSelector } from "@/redux/hooks";
 
@@ -10,6 +11,10 @@ const DoctorDashboard = () => {
   const params = useParams();
   const doctorId = params.id;
   const { user } = useAppSelector((state) => state.auth);
+
+  if (user?.doctor?.id && String(user.doctor.id) !== doctorId) {
+    redirect("/unauthorized");
+  }
 
   const [time, setTime] = useState(new Date());
 
@@ -20,10 +25,15 @@ const DoctorDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const doctorName = "Dr. Usman Sagheer";
+  const doctorName = user?.name || "Doctor";
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="flex h-[calc(100vh-80px)] overflow-hidden">
+      {/* Sidebar */}
+      <Sidebar />
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden p-6">
       <div className="max-w-full mx-auto w-full mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -79,7 +89,7 @@ const DoctorDashboard = () => {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-50/20">
-                <TokenList doctorId={user?.doctor?.id} /> 
+                <TokenList doctorId={doctorId as string} /> 
               </div>
             </div>
           </div>
@@ -143,6 +153,7 @@ const DoctorDashboard = () => {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

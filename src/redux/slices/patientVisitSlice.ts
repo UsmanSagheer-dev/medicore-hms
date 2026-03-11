@@ -26,10 +26,23 @@ export interface PatientVisit {
   updatedAt?: string;
 }
 
+export interface ConsultationData {
+  visitId: string;
+  symptoms?: string;
+  diagnosis?: string;
+  prescription?: string;
+  medicines?: any;
+  testRecommendations?: string;
+  nextFollowUp?: string;
+  notes?: string;
+}
+
 interface PatientVisitState {
+  
   visits: PatientVisit[];
   currentVisit: PatientVisit | null;
   todayVisits: PatientVisit[];
+  endDoctorDay: boolean;
   loading: boolean;
   error: string | null;
   success: boolean;
@@ -41,6 +54,7 @@ const initialState: PatientVisitState = {
   visits: [],
   currentVisit: null,
   todayVisits: [],
+  endDoctorDay: false,
   loading: false,
   error: null,
   success: false,
@@ -244,16 +258,7 @@ export const callPatient = createAsyncThunk(
   },
 );
 
-export interface ConsultationData {
-  visitId: string;
-  symptoms?: string;
-  diagnosis?: string;
-  prescription?: string;
-  medicines?: any;
-  testRecommendations?: string;
-  nextFollowUp?: string;
-  notes?: string;
-}
+
 
 export const createConsultation = createAsyncThunk(
   "patientVisit/createConsultation",
@@ -266,6 +271,22 @@ export const createConsultation = createAsyncThunk(
     }
   },
 );
+
+export const endDoctorDay = createAsyncThunk(
+  "patientVisit/endDoctorDay",
+  async (doctorId: string, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/visits/end-day/${doctorId}`);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+
+
+
 
 export const patientVisitSlice = createSlice({
   name: "patientVisit",
@@ -538,6 +559,23 @@ export const patientVisitSlice = createSlice({
         }
       })
       .addCase(createConsultation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        state.success = false;
+      })
+      .addCase(endDoctorDay.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(endDoctorDay.fulfilled, (state, action) => {
+        state.loading =false;
+        state.success = true;
+        state.visits=state.visits.filter((visit :any)=> visit.status !== "WAITING" && visit.status !== "INPROGRESS");
+        state.todayVisits=state.todayVisits.filter((visit :any)=> visit.status !== "WAITING" && visit.status !== "INPROGRESS");
+        state.endDoctorDay = true;
+      })
+      .addCase(endDoctorDay.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
         state.success = false;

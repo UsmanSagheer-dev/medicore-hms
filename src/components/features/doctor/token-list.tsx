@@ -41,17 +41,12 @@ const TokenList = ({ doctorId }: TokenListProps) => {
     [visits]
   );
 
+  const activeTokens= useMemo(() => tokens.filter((token) => token.status === "WAITING" || token.status ==="INPROGRESS"), [tokens]);
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button
-          onClick={handleRefresh}
-          disabled={loading}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          Refresh
-        </button>
+ 
       </div>
       {loading ? (
         <div className="text-center py-12 text-gray-500">Loading queue...</div>
@@ -62,7 +57,7 @@ const TokenList = ({ doctorId }: TokenListProps) => {
           No patients in the queue for today.
         </div>
       ) : (
-        tokens.map((token) => <DoctorTokenCard key={token.id} token={token} />)
+        activeTokens.map((token) => <DoctorTokenCard key={token.id} token={token} />)
       )}
     </div>
   );

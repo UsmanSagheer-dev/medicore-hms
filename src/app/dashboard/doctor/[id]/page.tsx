@@ -25,17 +25,43 @@ const DoctorDashboard = () => {
   const { user } = useAppSelector((state) => state.auth);
   const { visits, loading } = useAppSelector((state) => state.patientVisit);
 
+  const todayVisits = useMemo(() => {
+    const now = new Date();
+
+    return visits.filter((visit) => {
+      const rawDate = visit.createdAt || visit.date;
+      if (!rawDate) return false;
+
+      let visitDate = new Date(rawDate);
+
+      // Fallback for DD/MM/YYYY or DD-MM-YYYY formats
+      if (Number.isNaN(visitDate.getTime())) {
+        const match = rawDate.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+        if (!match) return false;
+
+        const [, day, month, year] = match;
+        visitDate = new Date(Number(year), Number(month) - 1, Number(day));
+      }
+
+      return (
+        visitDate.getFullYear() === now.getFullYear() &&
+        visitDate.getMonth() === now.getMonth() &&
+        visitDate.getDate() === now.getDate()
+      );
+    });
+  }, [visits]);
+
   const patientStats = useMemo(() => {
-    const total = visits.length;
-    const waiting = visits.filter(
+    const total = todayVisits.length;
+    const waiting = todayVisits.filter(
       (visit) => (visit as any).status === "WAITING",
     ).length;
-    const seen = visits.filter(
+    const seen = todayVisits.filter(
       (visit) => (visit as any).status === "COMPLETED",
     ).length;
 
     return { total, waiting, seen };
-  }, [visits]);
+  }, [todayVisits]);
 
   const handleEndDay = async () => {
     const result = await dispatch(endDoctorDay(doctorId as string));
@@ -178,7 +204,7 @@ const DoctorDashboard = () => {
                   </span>
                 </h3>
                 <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
-                  {visits
+                  {todayVisits
                     .filter((visit) => (visit as any).status === "COMPLETED")
                     .map((visit, index) => (
                       <div

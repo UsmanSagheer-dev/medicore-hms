@@ -46,7 +46,7 @@ function PatientRegistrationForm({
 
 
   return (
-    <div className="w-full h-full p-6 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
+    <div className="w-full h-full p-6 bg-red-100 rounded-2xl shadow-sm border border-gray-200 flex flex-col">
       <div className="mb-6 shrink-0">
         <Input
           ref={searchCnicRef}

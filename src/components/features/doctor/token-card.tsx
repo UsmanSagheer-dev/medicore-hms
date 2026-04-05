@@ -1,54 +1,22 @@
 "use client";
 
 import { Clock } from "lucide-react";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { callPatient } from "@/redux/slices/patientVisitSlice";
-import { useRouter, useParams } from "next/navigation";
+import {
+  DoctorToken,
+  useDoctorTokenCard,
+} from "@/hooks/useDoctorTokenCard";
 
 interface TokenCardProps {
-  token: {
-    id: string;
-    patientName: string;
-    tokenNumber: string;
-    time: string;
-    status: string;
-    visitType: "New" | "Follow up" | "Revisit";
-  };
+  token: DoctorToken;
 }
 
 const DoctorTokenCard = ({ token }: TokenCardProps) => {
-  const dispatch = useAppDispatch();
-  const router = useRouter();
-  const params = useParams();
-  const doctorId = params.id as string;
-  const { loading } = useAppSelector((state) => state.patientVisit);
-
-  const handleCallPatient = async () => {
-    router.push(`/dashboard/doctor/${doctorId}/consultation/${token.id}`);
-    
-    try {
-      await dispatch(callPatient(token.id)).unwrap();
-    } catch (error) {
-      console.error("Error calling patient:", error);
-    }
-  };
-
-  const handleResumeConsultation = () => {
-    router.push(`/dashboard/doctor/${doctorId}/consultation/${token.id}`);
-  };
-
-  const getVisitTypeStyles = (type: string) => {
-    switch (type) {
-      case "New":
-        return "bg-blue-100 text-blue-700 border-blue-200";
-      case "Follow up":
-        return "bg-purple-100 text-purple-700 border-purple-200";
-      case "Revisit":
-        return "bg-orange-100 text-orange-700 border-orange-200";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
-    }
-  };
+  const {
+    loading,
+    handleCallPatient,
+    handleResumeConsultation,
+    getVisitTypeStyles,
+  } = useDoctorTokenCard(token);
 
   return (
     <div className="group bg-white p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-slate-50 transition-all duration-200 mb-3 last:mb-0">

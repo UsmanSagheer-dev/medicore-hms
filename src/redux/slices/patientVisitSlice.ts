@@ -192,7 +192,9 @@ export const deletePatientVisit = createAsyncThunk(
   "patientVisit/delete",
   async (visitId: string, { rejectWithValue }) => {
     try {
-      const response = await api.delete(`/patient-visits/${visitId}`);
+      const response = await api.put(`/visits/${visitId}/status`, {
+        status: "CANCELLED",
+      });
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -257,6 +259,7 @@ export const callPatient = createAsyncThunk(
     }
   },
 );
+
 
 
 

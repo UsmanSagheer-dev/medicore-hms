@@ -46,7 +46,7 @@ function PatientRegistrationForm({
 
 
   return (
-    <div className="w-full h-full p-6 bg-red-100 rounded-2xl shadow-sm border border-gray-200 flex flex-col">
+    <div className="w-full h-full p-6  rounded-2xl shadow-sm border  flex flex-col">
       <div className="mb-6 shrink-0">
         <Input
           ref={searchCnicRef}
@@ -59,7 +59,7 @@ function PatientRegistrationForm({
               <CheckCircle className="w-5 h-5 text-green-500" />
             ) : null
           }
-          className="w-full bg-gray-50/50"
+          className="w-full bg-gray-50/50 text-black"
           value={searchCnic}
           onChange={handleSearchCnicChange}
           onKeyDown={handleSearchKeyDown}

@@ -43,7 +43,7 @@ function ReceptionistDashboard() {
     );
 
     return (
-        <div className="h-full bg-amber-300 overflow-y-auto">
+        <div className="h-full bg-white overflow-y-auto">
             <div className="flex flex-col md:flex-row gap-4 h-auto md:h-full p-1">
                 <div className="w-full md:flex-2 min-w-0 h-full">
                     <PatientRegistrationForm />

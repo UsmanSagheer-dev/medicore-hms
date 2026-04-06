@@ -1,13 +1,7 @@
+
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import {
-  getVistByDoctor,
-  createConsultation,
-} from "@/redux/slices/patientVisitSlice";
-import { generatePrescriptionPDF } from "@/lib/generatePrescriptionPDF";
+import { useParams } from "next/navigation";
 import {
   ArrowLeft,
   FileText,
@@ -22,212 +16,15 @@ import {
   Phone,
   MapPin,
 } from "lucide-react";
-
-interface Medicine {
-  id: string;
-  name: string;
-  dosage: string;
-  frequency: string;
-  duration: string;
-}
+import { useConsultationPage } from "@/hooks/useConsultationPage";
 
 const ConsultationPage = () => {
   const params = useParams();
-  const router = useRouter();
-  const dispatch = useAppDispatch();
   const doctorId = params.id as string;
   const visitId = params.visitId as string;
+  const hook = useConsultationPage(doctorId, visitId);
 
-  const { visits, loading, error } = useAppSelector(
-    (state) => state.patientVisit,
-  );
-  const { user: doctorUser } = useAppSelector((state) => state.auth);
-
-  // Find visit from visits array
-  const currentVisit = useMemo(() => {
-    return visits.find((v) => v.id === visitId);
-  }, [visits, visitId]);
-
-  const [formData, setFormData] = useState({
-    notes: "",
-    testRecommendations: "",
-    nextFollowUp: "",
-  });
-
-  const [symptoms, setSymptoms] = useState<string[]>([]);
-  const [newSymptom, setNewSymptom] = useState("");
-
-  const [diagnoses, setDiagnoses] = useState<string[]>([]);
-  const [newDiagnosis, setNewDiagnosis] = useState("");
-
-  const [medicines, setMedicines] = useState<Medicine[]>([]);
-  const [newMedicine, setNewMedicine] = useState({
-    name: "",
-    dosage: "",
-    frequency: "",
-    duration: "",
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!currentVisit && doctorId) {
-      dispatch(getVistByDoctor(doctorId));
-    }
-  }, [dispatch, doctorId, currentVisit]);
-
-  // Load draft from localStorage on mount
-  useEffect(() => {
-    const savedDraft = localStorage.getItem(`consultation_draft_${visitId}`);
-    if (savedDraft) {
-      try {
-        const draft = JSON.parse(savedDraft);
-        const draftData = draft.formData || draft;
-        const mergedFormData = {
-          notes: "",
-          testRecommendations: "",
-          nextFollowUp: "",
-          ...draftData,
-        };
-        setFormData(mergedFormData);
-        setSymptoms(draft.symptoms || []);
-        setDiagnoses(draft.diagnoses || []);
-        setMedicines(draft.medicines || []);
-      } catch (e) {
-        console.error("❌ Error loading draft:", e);
-      }
-    }
-  }, [visitId]);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleAddMedicine = () => {
-    if (!newMedicine.name.trim()) {
-      alert("Please enter medicine name");
-      return;
-    }
-    const medicine: Medicine = {
-      id: Date.now().toString(),
-      ...newMedicine,
-    };
-    setMedicines([...medicines, medicine]);
-    setNewMedicine({ name: "", dosage: "", frequency: "", duration: "" });
-  };
-
-  const handleRemoveMedicine = (id: string) => {
-    setMedicines(medicines.filter((m) => m.id !== id));
-  };
-
-  const handleAddSymptom = () => {
-    if (!newSymptom.trim()) {
-      alert("Please enter a symptom");
-      return;
-    }
-    setSymptoms([...symptoms, newSymptom]);
-    setNewSymptom("");
-  };
-
-  const handleRemoveSymptom = (index: number) => {
-    setSymptoms(symptoms.filter((_, i) => i !== index));
-  };
-
-  const handleAddDiagnosis = () => {
-    if (!newDiagnosis.trim()) {
-      alert("Please enter a diagnosis");
-      return;
-    }
-    setDiagnoses([...diagnoses, newDiagnosis]);
-    setNewDiagnosis("");
-  };
-
-  const handleRemoveDiagnosis = (index: number) => {
-    setDiagnoses(diagnoses.filter((_, i) => i !== index));
-  };
-
-  const handleSave = () => {
-    const draftData = { formData, symptoms, diagnoses, medicines };
-    localStorage.setItem(
-      `consultation_draft_${visitId}`,
-      JSON.stringify(draftData),
-    );
-    setSaveMessage("Draft saved successfully!");
-    setTimeout(() => setSaveMessage(null), 3000);
-  };
-
-  // Helper to build PDF params from current state
-  const getPDFParams = () => ({
-    patientName: visit?.patientName,
-    tokenNo: visit?.tokenNo,
-    age: visit?.age,
-    gender: visit?.gender,
-    visitType: visit?.visitType,
-    symptoms,
-    diagnoses,
-    medicines,
-    nextFollowUp: formData.nextFollowUp,
-    testRecommendations: formData.testRecommendations,
-    doctorName: doctorUser?.doctor?.full_name,
-    doctorSpecialization: doctorUser?.doctor?.specialization,
-    doctorQualifications: doctorUser?.doctor?.qualifications,
-    doctorPhone: doctorUser?.doctor?.phone,
-    doctorEmail: doctorUser?.doctor?.email,
-    clinicAddress: doctorUser?.doctor?.clinic_address,
-  });
-
-  const handleComplete = async () => {
-    try {
-      setIsSubmitting(true);
-      const prescriptionText = medicines
-        .map((m) => `${m.name} - ${m.dosage} - ${m.frequency} - ${m.duration}`)
-        .join("\n");
-
-      const consultationPayload = {
-        visitId,
-        symptoms: symptoms.join(","),
-        diagnosis: diagnoses.join(","),
-        prescription: prescriptionText,
-        medicines: medicines,
-        testRecommendations: formData.testRecommendations,
-        nextFollowUp: formData.nextFollowUp
-          ? new Date(formData.nextFollowUp).toISOString()
-          : undefined,
-        notes: formData.notes,
-      };
-
-      await dispatch(createConsultation(consultationPayload)).unwrap();
-
-      // Generate PDF after saving
-      await generatePrescriptionPDF(getPDFParams());
-
-      localStorage.removeItem(`consultation_draft_${visitId}`);
-      router.push(`/dashboard/doctor/${doctorId}`);
-    } catch (error) {
-      console.error("❌ Error completing consultation:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const generatePDF = async () => {
-    await generatePrescriptionPDF(getPDFParams());
-  };
-
-  const handleBack = () => {
-    const draftData = { formData, symptoms, diagnoses, medicines };
-    localStorage.setItem(
-      `consultation_draft_${visitId}`,
-      JSON.stringify(draftData),
-    );
-    router.push(`/dashboard/doctor/${doctorId}`);
-  };
-
-  if (loading) {
+  if (hook.loading) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-gray-500">Loading patient details...</div>
@@ -235,15 +32,15 @@ const ConsultationPage = () => {
     );
   }
 
-  if (error) {
+  if (hook.error) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-red-500">{error}</div>
+        <div className="text-red-500">{hook.error}</div>
       </div>
     );
   }
 
-  const visit = currentVisit as any;
+  const visit = hook.currentVisit as any;
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-gray-50">
@@ -252,7 +49,7 @@ const ConsultationPage = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
-              onClick={handleBack}
+              onClick={hook.handleBack}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-gray-600" />
@@ -298,16 +95,16 @@ const ConsultationPage = () => {
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      value={newSymptom}
-                      onChange={(e) => setNewSymptom(e.target.value)}
+                      value={hook.newSymptom}
+                      onChange={(e) => hook.setNewSymptom(e.target.value)}
                       onKeyPress={(e) =>
-                        e.key === "Enter" && handleAddSymptom()
+                        e.key === "Enter" && hook.handleAddSymptom()
                       }
                       placeholder="e.g., Fever, Headache, Cough..."
                       className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm font-poppins"
                     />
                     <button
-                      onClick={handleAddSymptom}
+                      onClick={hook.handleAddSymptom}
                       className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors text-sm font-poppins"
                     >
                       <Plus className="w-4 h-4" />
@@ -315,12 +112,12 @@ const ConsultationPage = () => {
                   </div>
                 </div>
               </div>
-              {symptoms.length > 0 && (
+              {hook.symptoms.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
                   <p className="text-xs font-semibold text-gray-700 font-poppins">
-                    Added Symptoms ({symptoms.length})
+                    Added Symptoms ({hook.symptoms.length})
                   </p>
-                  {symptoms.map((symptom, index) => (
+                  {hook.symptoms.map((symptom, index) => (
                     <div
                       key={index}
                       className="flex items-center justify-between gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100"
@@ -329,7 +126,7 @@ const ConsultationPage = () => {
                         {symptom}
                       </p>
                       <button
-                        onClick={() => handleRemoveSymptom(index)}
+                        onClick={() => hook.handleRemoveSymptom(index)}
                         className="p-1.5 hover:bg-red-100 text-red-600 rounded transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -356,16 +153,16 @@ const ConsultationPage = () => {
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      value={newDiagnosis}
-                      onChange={(e) => setNewDiagnosis(e.target.value)}
+                      value={hook.newDiagnosis}
+                      onChange={(e) => hook.setNewDiagnosis(e.target.value)}
                       onKeyPress={(e) =>
-                        e.key === "Enter" && handleAddDiagnosis()
+                        e.key === "Enter" && hook.handleAddDiagnosis()
                       }
                       placeholder="e.g., Common Cold, Hypertension..."
                       className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-sm font-poppins"
                     />
                     <button
-                      onClick={handleAddDiagnosis}
+                      onClick={hook.handleAddDiagnosis}
                       className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors text-sm font-poppins"
                     >
                       <Plus className="w-4 h-4" />
@@ -373,12 +170,12 @@ const ConsultationPage = () => {
                   </div>
                 </div>
               </div>
-              {diagnoses.length > 0 && (
+              {hook.diagnoses.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
                   <p className="text-xs font-semibold text-gray-700 font-poppins">
-                    Added Diagnoses ({diagnoses.length})
+                    Added Diagnoses ({hook.diagnoses.length})
                   </p>
-                  {diagnoses.map((diagnosis, index) => (
+                  {hook.diagnoses.map((diagnosis, index) => (
                     <div
                       key={index}
                       className="flex items-center justify-between gap-2 p-3 bg-purple-50 rounded-lg border border-purple-100"
@@ -387,7 +184,7 @@ const ConsultationPage = () => {
                         {diagnosis}
                       </p>
                       <button
-                        onClick={() => handleRemoveDiagnosis(index)}
+                        onClick={() => hook.handleRemoveDiagnosis(index)}
                         className="p-1.5 hover:bg-red-100 text-red-600 rounded transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -413,9 +210,9 @@ const ConsultationPage = () => {
                   </label>
                   <input
                     type="text"
-                    value={newMedicine.name}
+                    value={hook.newMedicine.name}
                     onChange={(e) =>
-                      setNewMedicine({ ...newMedicine, name: e.target.value })
+                      hook.setNewMedicine({ ...hook.newMedicine, name: e.target.value })
                     }
                     placeholder="e.g., Paracetamol"
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm font-poppins"
@@ -427,9 +224,9 @@ const ConsultationPage = () => {
                   </label>
                   <input
                     type="text"
-                    value={newMedicine.dosage}
+                    value={hook.newMedicine.dosage}
                     onChange={(e) =>
-                      setNewMedicine({ ...newMedicine, dosage: e.target.value })
+                      hook.setNewMedicine({ ...hook.newMedicine, dosage: e.target.value })
                     }
                     placeholder="e.g., 500mg"
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm font-poppins"
@@ -441,10 +238,10 @@ const ConsultationPage = () => {
                   </label>
                   <input
                     type="text"
-                    value={newMedicine.frequency}
+                    value={hook.newMedicine.frequency}
                     onChange={(e) =>
-                      setNewMedicine({
-                        ...newMedicine,
+                      hook.setNewMedicine({
+                        ...hook.newMedicine,
                         frequency: e.target.value,
                       })
                     }
@@ -458,10 +255,10 @@ const ConsultationPage = () => {
                   </label>
                   <input
                     type="text"
-                    value={newMedicine.duration}
+                    value={hook.newMedicine.duration}
                     onChange={(e) =>
-                      setNewMedicine({
-                        ...newMedicine,
+                      hook.setNewMedicine({
+                        ...hook.newMedicine,
                         duration: e.target.value,
                       })
                     }
@@ -470,19 +267,19 @@ const ConsultationPage = () => {
                   />
                 </div>
                 <button
-                  onClick={handleAddMedicine}
+                  onClick={hook.handleAddMedicine}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-colors text-sm mt-2 font-poppins"
                 >
                   <Plus className="w-4 h-4" />
                   Add Medicine
                 </button>
               </div>
-              {medicines.length > 0 && (
+              {hook.medicines.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
                   <p className="text-xs font-semibold text-gray-700 font-poppins">
-                    Added Medicines ({medicines.length})
+                    Added Medicines ({hook.medicines.length})
                   </p>
-                  {medicines.map((medicine) => (
+                  {hook.medicines.map((medicine) => (
                     <div
                       key={medicine.id}
                       className="flex items-start justify-between gap-2 p-3 bg-emerald-50 rounded-lg border border-emerald-100"
@@ -492,12 +289,11 @@ const ConsultationPage = () => {
                           {medicine.name}
                         </p>
                         <p className="text-xs text-gray-600 font-poppins">
-                          {medicine.dosage} • {medicine.frequency} •{" "}
-                          {medicine.duration}
+                          {medicine.dosage} • {medicine.frequency} • {medicine.duration}
                         </p>
                       </div>
                       <button
-                        onClick={() => handleRemoveMedicine(medicine.id)}
+                        onClick={() => hook.handleRemoveMedicine(medicine.id)}
                         className="p-1.5 hover:bg-red-100 text-red-600 rounded transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -519,8 +315,8 @@ const ConsultationPage = () => {
               <input
                 type="date"
                 name="nextFollowUp"
-                value={formData.nextFollowUp}
-                onChange={handleInputChange}
+                value={hook.formData.nextFollowUp}
+                onChange={hook.handleInputChange}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none text-sm font-poppins"
               />
             </div>
@@ -535,8 +331,8 @@ const ConsultationPage = () => {
               </div>
               <textarea
                 name="testRecommendations"
-                value={formData.testRecommendations}
-                onChange={handleInputChange}
+                value={hook.formData.testRecommendations}
+                onChange={hook.handleInputChange}
                 placeholder="e.g., Blood Test, X-Ray, Ultrasound..."
                 className="w-full h-20 p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none text-sm font-poppins"
               />
@@ -570,14 +366,14 @@ const ConsultationPage = () => {
                   }}
                 >
                   <p className="font-bold text-white text-lg leading-tight font-poppins">
-                    Dr. {doctorUser?.doctor?.full_name || "Dr. [Your Name]"}
+                    Dr. {hook.doctorUser?.doctor?.full_name || "Dr. [Your Name]"}
                   </p>
                   <p className="text-xs text-white opacity-90 mt-0.5 font-poppins">
-                    {doctorUser?.doctor?.specialization || "Specialist Doctor"}
+                    {hook.doctorUser?.doctor?.specialization || "Specialist Doctor"}
                   </p>
                   <p className="text-xs text-white opacity-80 mt-1 font-poppins">
                     Qualification:{" "}
-                    {doctorUser?.doctor?.qualifications || "---"}
+                    {hook.doctorUser?.doctor?.qualifications || "---"}
                   </p>
                 </div>
                 <div
@@ -712,9 +508,9 @@ const ConsultationPage = () => {
                     <p className="text-sm font-bold text-gray-700 uppercase mb-3 font-poppins">
                       Chief Complaint
                     </p>
-                    {symptoms.length > 0 ? (
+                    {hook.symptoms.length > 0 ? (
                       <div className="space-y-1 flex-1">
-                        {symptoms.map((symptom, index) => (
+                        {hook.symptoms.map((symptom: string, index: number) => (
                           <p
                             key={index}
                             className="text-sm text-gray-600 p-1 font-poppins"
@@ -733,9 +529,9 @@ const ConsultationPage = () => {
                     <p className="text-sm font-bold text-gray-700 uppercase mb-3 px-2 py-1 rounded w-fit font-poppins">
                       Diagnosis
                     </p>
-                    {diagnoses.length > 0 ? (
+                    {hook.diagnoses.length > 0 ? (
                       <div className="space-y-1 flex-1">
-                        {diagnoses.map((diagnosis, index) => (
+                        {hook.diagnoses.map((diagnosis: string, index: number) => (
                           <p
                             key={index}
                             className="text-sm text-gray-600 p-1 font-poppins"
@@ -753,9 +549,9 @@ const ConsultationPage = () => {
                 </div>
                 <div className="p-4 border-gray-300 w-[65%]">
                   <p className="text-3xl font-bold text-gray-700 mb-3">℞</p>
-                  {medicines.length > 0 ? (
+                  {hook.medicines.length > 0 ? (
                     <div className="space-y-2">
-                      {medicines.map((medicine, index) => (
+                      {hook.medicines.map((medicine: any, index: number) => (
                         <div key={medicine.id} className="flex gap-3 text-sm">
                           <span className="font-bold text-gray-700 w-6 font-poppins">
                             {index + 1}.
@@ -765,8 +561,7 @@ const ConsultationPage = () => {
                               {medicine.name}
                             </p>
                             <p className="text-xs text-gray-600 font-poppins">
-                              {medicine.dosage} - {medicine.frequency} -{" "}
-                              {medicine.duration}
+                              {medicine.dosage} - {medicine.frequency} - {medicine.duration}
                             </p>
                           </div>
                         </div>
@@ -793,13 +588,13 @@ const ConsultationPage = () => {
                     <p className="text-xs font-bold text-gray-700 uppercase font-poppins">
                       Next Follow-up:
                     </p>
-                    {formData.nextFollowUp ? (
+                    {hook.formData.nextFollowUp ? (
                       <p
                         className="text-sm font-semibold border-b-2 border-gray-700 font-poppins"
                         style={{ color: "#1e3a8a" }}
                       >
                         {new Date(
-                          formData.nextFollowUp,
+                          hook.formData.nextFollowUp,
                         ).toLocaleDateString()}
                       </p>
                     ) : (
@@ -818,17 +613,17 @@ const ConsultationPage = () => {
                     <Phone className="w-4 h-4 text-blue-600" />
                     <div className="ml-2">
                       <p className="text-gray-600 font-poppins">
-                        {doctorUser?.doctor?.phone || "+92 XXX-XXXXXXX"}
+                        {hook.doctorUser?.doctor?.phone || "+92 XXX-XXXXXXX"}
                       </p>
                       <p className="text-gray-600 font-poppins">
-                        {doctorUser?.doctor?.email || "doctor@clinic.com"}
+                        {hook.doctorUser?.doctor?.email || "doctor@clinic.com"}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-red-600" />
                     <p className="text-gray-600 font-poppins">
-                      {doctorUser?.doctor?.clinic_address ||
+                      {hook.doctorUser?.doctor?.clinic_address ||
                         "123 Medical Plaza, Healthcare City"}
                     </p>
                   </div>
@@ -838,15 +633,15 @@ const ConsultationPage = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-3 mt-6">
-              {saveMessage && (
+              {hook.saveMessage && (
                 <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-200 text-sm font-medium font-poppins">
                   <CheckCircle className="w-4 h-4" />
-                  {saveMessage}
+                  {hook.saveMessage}
                 </div>
               )}
               <div className="flex gap-3">
                 <button
-                  onClick={generatePDF}
+                  onClick={hook.generatePDF}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-semibold transition-colors text-sm font-poppins"
                 >
                   <Download className="w-4 h-4" />
@@ -855,19 +650,19 @@ const ConsultationPage = () => {
               </div>
               <div className="flex gap-3">
                 <button
-                  onClick={handleSave}
+                  onClick={hook.handleSave}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition-colors text-sm font-poppins"
                 >
                   <Save className="w-4 h-4" />
                   Save Draft
                 </button>
                 <button
-                  onClick={handleComplete}
-                  disabled={isSubmitting}
+                  onClick={hook.handleComplete}
+                  disabled={hook.isSubmitting}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed font-poppins"
                 >
                   <CheckCircle className="w-4 h-4" />
-                  {isSubmitting ? "Completing..." : "Complete"}
+                  {hook.isSubmitting ? "Completing..." : "Complete"}
                 </button>
               </div>
             </div>

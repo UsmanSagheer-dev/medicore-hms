@@ -8,6 +8,7 @@ import {
   createPatientVisit,
   getPatientByCNIC,
   getVistiByPatientId,
+  getLatestConsultation,
 } from "@/redux/slices/patientVisitSlice";
 
 interface UsePatientRegistrationFormProps {
@@ -66,9 +67,94 @@ export function usePatientRegistrationForm({
   };
 
   // Event handlers
-  const handleDoctorChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const currentVisitType = visitTypeRef.current?.value || "";
-    setFeeFromDoctorAndVisitType(e.target.value, currentVisitType);
+  const handleDoctorChange = async (e: ChangeEvent<HTMLSelectElement>) => {
+    const doctorId = e.target.value;
+    
+    // If patient is already found, fetch latest consultation to auto-select visit type
+    if (searchedPatient?.id) {
+      try {
+        console.log("🔍 Fetching latest consultation for patient:", searchedPatient.id);
+        
+        const consultationResult = await dispatch(
+          getLatestConsultation(searchedPatient.id),
+        );
+
+        console.log("📦 Consultation Result:", consultationResult);
+
+        if (consultationResult.meta.requestStatus === "fulfilled" && consultationResult.payload) {
+          const consultation = consultationResult.payload?.data || consultationResult.payload;
+          
+          console.log("📋 Consultation Data:", consultation);
+          console.log("📅 Next Follow-up:", consultation?.nextFollowUp);
+          console.log("🏥 Visit Type:", consultation?.visit?.visitType);
+          
+          // Auto-select visit type based on latest consultation's nextFollowUp
+          let visitType = "new"; // Default to new case
+          
+          // 1️⃣ Check if nextFollowUp is a valid date (means follow-up is scheduled)
+          if (consultation?.nextFollowUp && consultation.nextFollowUp !== null && consultation.nextFollowUp !== "") {
+            const followUpDate = new Date(consultation.nextFollowUp);
+            const today = new Date();
+            
+            // Reset time to midnight for fair date comparison
+            today.setHours(0, 0, 0, 0);
+            followUpDate.setHours(0, 0, 0, 0);
+            
+            console.log("📅 Follow-up Date Comparison:");
+            console.log("   Today:", today.toDateString());
+            console.log("   Follow-up:", followUpDate.toDateString());
+            console.log("   Is follow-up today or later?", followUpDate >= today);
+            
+            // If follow-up is today or in the future, it's a follow-up visit
+            if (followUpDate >= today) {
+              visitType = "followup";
+              console.log("✅ Auto-selected: FOLLOW UP");
+            } else {
+              // If follow-up is in the past, it's overdue but still a follow-up
+              visitType = "followup";
+              console.log("⚠️ Auto-selected: FOLLOW UP (OVERDUE)");
+            }
+          } 
+          // 2️⃣ Check visit type from previous consultation
+          else if (consultation?.visit?.visitType) {
+            const prevVisitType = consultation.visit.visitType.toUpperCase();
+            console.log("🔄 Previous Visit Type:", prevVisitType);
+            
+            if (prevVisitType === "NEW" || prevVisitType === "FOLLOWUP") {
+              visitType = "followup";
+              console.log("✅ Auto-selected: FOLLOW UP (from previous visit)");
+            } else if (prevVisitType === "REVISIT") {
+              visitType = "revisit";
+              console.log("✅ Auto-selected: REVISIT");
+            }
+          } else {
+            console.log("❌ No follow-up info, defaulting to: NEW CASE");
+          }
+
+          if (visitTypeRef.current) {
+            visitTypeRef.current.value = visitType;
+            console.log("✏️ Visit Type Set to:", visitType);
+          }
+          
+          // Update fee based on auto-selected visit type
+          setFeeFromDoctorAndVisitType(doctorId, visitType);
+        } else {
+          // No consultation found, just set fee with current visit type
+          console.log("❌ Consultation fetch failed");
+          const currentVisitType = visitTypeRef.current?.value || "";
+          setFeeFromDoctorAndVisitType(doctorId, currentVisitType);
+        }
+      } catch (error) {
+        console.error("❌ Error fetching latest consultation:", error);
+        const currentVisitType = visitTypeRef.current?.value || "";
+        setFeeFromDoctorAndVisitType(doctorId, currentVisitType);
+      }
+    } else {
+      // No patient selected yet, just set fee with current visit type
+      console.log("⚠️ No patient selected");
+      const currentVisitType = visitTypeRef.current?.value || "";
+      setFeeFromDoctorAndVisitType(doctorId, currentVisitType);
+    }
   };
 
   const handleVisitTypeChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -117,10 +203,12 @@ export function usePatientRegistrationForm({
       setSearchLoading(true);
 
       try {
+        // Fetch patient visits to check if they have visit history
         const visitResult = await dispatch(
           getVistiByPatientId(searchedPatient.id),
         );
 
+        // Fill basic patient information
         if (fullNameRef.current)
           fullNameRef.current.value =
             searchedPatient.fullName || searchedPatient.full_name || "";
@@ -139,20 +227,7 @@ export function usePatientRegistrationForm({
             searchedPatient.phoneNumber || searchedPatient.phone_number || "";
         if (cnicRef.current) cnicRef.current.value = searchedPatient.cnic || "";
 
-        // If there's visit history, set visit type to revisit
-        if (
-          visitResult.meta.requestStatus === "fulfilled" &&
-          visitResult.payload?.visits?.length > 0
-        ) {
-          if (visitTypeRef.current) visitTypeRef.current.value = "revisit";
-          // Update consultation fee based on revisit
-          const currentDoctorId = selectDoctorRef.current?.value || "";
-          if (currentDoctorId) {
-            setFeeFromDoctorAndVisitType(currentDoctorId, "revisit");
-          }
-        }
-
-        toast.success("Patient data loaded successfully!");
+        toast.success("Patient data loaded! Now select a doctor to auto-set follow-up type.");
       } catch (error) {
         toast.error("Error loading patient data");
         console.error("Error fetching patient visit:", error);

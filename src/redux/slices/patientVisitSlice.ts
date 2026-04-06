@@ -37,11 +37,27 @@ export interface ConsultationData {
   notes?: string;
 }
 
+export interface LatestConsultation {
+  id?: string;
+  patientId?: string;
+  nextFollowUp?: string;
+  visitType?: "New" | "Follow up" | "Revisit";
+  symptoms?: string;
+  diagnosis?: string;
+  prescription?: string;
+  medicines?: any;
+  testRecommendations?: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 interface PatientVisitState {
   
   visits: PatientVisit[];
   currentVisit: PatientVisit | null;
   todayVisits: PatientVisit[];
+  latestConsultation: LatestConsultation | null;
   endDoctorDay: boolean;
   loading: boolean;
   error: string | null;
@@ -54,6 +70,7 @@ const initialState: PatientVisitState = {
   visits: [],
   currentVisit: null,
   todayVisits: [],
+  latestConsultation: null,
   endDoctorDay: false,
   loading: false,
   error: null,
@@ -287,6 +304,17 @@ export const endDoctorDay = createAsyncThunk(
   }
 );
 
+export const getLatestConsultation = createAsyncThunk(
+  "patientVisit/getLatestConsultation",
+  async (patientId: string, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/consultations/patient/${patientId}/latest`);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  }
+);
 
 
 
@@ -582,6 +610,20 @@ export const patientVisitSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
         state.success = false;
+      })
+      .addCase(getLatestConsultation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getLatestConsultation.fulfilled, (state, action) => {
+        state.loading = false;
+        const consultation = action.payload?.data || action.payload;
+        state.latestConsultation = consultation;
+      })
+      .addCase(getLatestConsultation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        state.latestConsultation = null;
       });
   },
 });

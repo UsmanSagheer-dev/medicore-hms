@@ -79,7 +79,7 @@ const handleDoctorChange = async (e: ChangeEvent<HTMLSelectElement>) => {
       if (consultationResult.meta.requestStatus === "fulfilled" && consultationResult.payload) {
         const consultation = consultationResult.payload?.data || consultationResult.payload;
         
-        let visitType = "new"; 
+        let visitType = "NEW"; // Default to NEW if no consultation found
         
         // ✅ PRIMARY CHECK: nextFollowUp date
         if (consultation?.nextFollowUp) {
@@ -89,14 +89,14 @@ const handleDoctorChange = async (e: ChangeEvent<HTMLSelectElement>) => {
           followUpDate.setHours(0, 0, 0, 0);
           
           if (followUpDate >= today) {
-            visitType = "followup"; 
+            visitType = "FOLLOWUP"; 
           } else {
-            visitType = "revisit";
+            visitType = "REVISIT";
           }
         } 
         else if (consultation?.id) {
          
-          visitType = "revisit";
+          visitType = "REVISIT";
         }
         
         if (visitTypeRef.current) {

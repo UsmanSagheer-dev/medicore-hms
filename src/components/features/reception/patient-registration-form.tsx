@@ -35,7 +35,6 @@ function PatientRegistrationForm({
     patientFound,
     searchLoading,
     activeDoctors,
-    patientLoading,
     handleDoctorChange,
     handleVisitTypeChange,
     handleRegister,
@@ -118,9 +117,9 @@ function PatientRegistrationForm({
             placeholder="Visit Type"
             onChange={handleVisitTypeChange}
             options={[
-              { value: "new", label: "New Case" },
-              { value: "revisit", label: "Revisit" },
-              { value: "followup", label: "Follow Up" },
+              { value: "NEW", label: "New Case" },
+              { value: "REVISIT", label: "Revisit" },
+              { value: "FOLLOWUP", label: "Follow Up" },
             ]}
           />
 

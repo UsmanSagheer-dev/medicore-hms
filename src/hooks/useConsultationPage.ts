@@ -6,6 +6,7 @@ import {
   getVistByDoctor,
 } from "@/redux/slices/patientVisitSlice";
 import { generatePrescriptionPDF } from "@/lib/generatePrescriptionPDF";
+import toast from "react-hot-toast";
 
 export interface Medicine {
   id: string;
@@ -25,7 +26,7 @@ export const useConsultationPage = (doctorId: string, visitId: string) => {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-  const { visits, loading, error } = useAppSelector(
+  const { visits, loading, error, latestConsultation } = useAppSelector(
     (state) => state.patientVisit,
   );
   const { user: doctorUser } = useAppSelector((state) => state.auth);
@@ -88,6 +89,78 @@ export const useConsultationPage = (doctorId: string, visitId: string) => {
     }
   }, [visitId]);
 
+  useEffect(() => {
+    if (
+      !currentVisit ||
+      currentVisit.visitType !== "FOLLOWUP" ||
+      !latestConsultation
+    ) {
+      return;
+    }
+
+    const savedDraft = localStorage.getItem(`consultation_draft_${visitId}`);
+    if (savedDraft) return;
+
+    console.log("Loading previous consultation data for FOLLOWUP visit...");
+
+    if (latestConsultation.symptoms) {
+      const symptomsList = latestConsultation.symptoms
+        .split(",")
+        .map((s: string) => s.trim())
+        .filter((s: string) => s);
+      setSymptoms(symptomsList);
+    }
+
+    if (latestConsultation.diagnosis) {
+      const diagnosisList = latestConsultation.diagnosis
+        .split(",")
+        .map((d: string) => d.trim())
+        .filter((d: string) => d);
+      setDiagnoses(diagnosisList);
+    }
+
+    if (
+      latestConsultation.medicines &&
+      Array.isArray(latestConsultation.medicines)
+    ) {
+      const medicinesList = latestConsultation.medicines.map(
+        (medicine: any) => ({
+          id: Date.now().toString() + Math.random(),
+          name: medicine.name || "",
+          dosage: medicine.dosage || "",
+          frequency: medicine.frequency || "",
+          duration: medicine.duration || "",
+        }),
+      );
+      setMedicines(medicinesList);
+    }
+
+    if (latestConsultation.nextFollowUp) {
+      try {
+        const followUpDate = new Date(latestConsultation.nextFollowUp)
+          .toISOString()
+          .split("T")[0];
+        setFormData((prev) => ({ ...prev, nextFollowUp: followUpDate }));
+      } catch (e) {
+        console.error("Error parsing nextFollowUp date:", e);
+      }
+    }
+
+    if (latestConsultation.testRecommendations) {
+      setFormData((prev) => ({
+        ...prev,
+        testRecommendations: latestConsultation.testRecommendations || "",
+      }));
+    }
+
+    if (latestConsultation.notes) {
+      setFormData((prev) => ({
+        ...prev,
+        notes: latestConsultation.notes || "",
+      }));
+    }
+  }, [currentVisit, latestConsultation, visitId]);
+
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
@@ -97,7 +170,7 @@ export const useConsultationPage = (doctorId: string, visitId: string) => {
 
   const handleAddMedicine = () => {
     if (!newMedicine.name.trim()) {
-      alert("Please enter medicine name");
+      toast.error("Please enter medicine name");
       return;
     }
 
@@ -116,7 +189,7 @@ export const useConsultationPage = (doctorId: string, visitId: string) => {
 
   const handleAddSymptom = () => {
     if (!newSymptom.trim()) {
-      alert("Please enter a symptom");
+      toast.error("Please enter a symptom");
       return;
     }
 
@@ -130,7 +203,7 @@ export const useConsultationPage = (doctorId: string, visitId: string) => {
 
   const handleAddDiagnosis = () => {
     if (!newDiagnosis.trim()) {
-      alert("Please enter a diagnosis");
+      toast.error("Please enter a diagnosis");
       return;
     }
 
@@ -226,6 +299,7 @@ export const useConsultationPage = (doctorId: string, visitId: string) => {
     currentVisit,
     loading,
     error,
+    latestConsultation,
     formData,
     symptoms,
     newSymptom,

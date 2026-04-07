@@ -1,14 +1,18 @@
 import { useParams, useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { callPatient } from "@/redux/slices/patientVisitSlice";
+import {
+  callPatient,
+  getLatestConsultation,
+} from "@/redux/slices/patientVisitSlice";
 
 export interface DoctorToken {
   id: string;
+  patientId?: string;
   patientName: string;
   tokenNumber: string;
   time: string;
   status: string;
-  visitType: "New" | "Follow up" | "Revisit";
+  visitType: "NEW" | "FOLLOWUP" | "REVISIT";
 }
 
 export const useDoctorTokenCard = (token: DoctorToken) => {
@@ -25,6 +29,15 @@ export const useDoctorTokenCard = (token: DoctorToken) => {
       } catch (error) {
         console.error("Error calling patient:", error);
         return;
+      }
+    }
+
+    if (token.visitType === "FOLLOWUP" && token.patientId) {
+      try {
+        await dispatch(getLatestConsultation(token.patientId)).unwrap();
+      } catch (error) {
+        console.warn("Could not fetch latest consultation:", error);
+        // Don't return here - let them proceed even if fetching consultation fails
       }
     }
 

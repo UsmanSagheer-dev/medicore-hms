@@ -4,7 +4,7 @@ export interface DoctorToken {
   tokenNumber: string;
   time: string;
   status: string;
-  visitType: "New" | "Follow up" | "Revisit";
+  visitType: "NEW" | "FOLLOWUP" | "REVISIT";
 }
 
 
@@ -28,7 +28,7 @@ export interface PatientVisit {
   time: string;
   isPaid: boolean;
   paymentStatus: "pending" | "paid";
-  visitType: "New" | "Follow up" | "Revisit";
+  visitType: "NEW" | "FOLLOWUP" | "REVISIT";
   createdAt?: string;
   updatedAt?: string;
 }
@@ -48,7 +48,7 @@ export interface LatestConsultation {
   id?: string;
   patientId?: string;
   nextFollowUp?: string;
-  visitType?: "New" | "Follow up" | "Revisit";
+  visitType?: "NEW" | "FOLLOWUP" | "REVISIT";
   symptoms?: string;
   diagnosis?: string;
   prescription?: string;

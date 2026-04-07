@@ -164,7 +164,7 @@ const PatientGroup = ({
       <h2 className="text-xl font-semibold text-gray-800 mb-4">
         {title} ({patients.length})
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {patients.map((patient) => (
           <PatientCard key={patient.id} patient={patient} />
         ))}

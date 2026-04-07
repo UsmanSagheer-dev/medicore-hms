@@ -7,7 +7,6 @@ import {
   createPatient,
   createPatientVisit,
   getPatientByCNIC,
-  getVistiByPatientId,
   getLatestConsultation,
 } from "@/redux/slices/patientVisitSlice";
 
@@ -61,7 +60,7 @@ export function usePatientRegistrationForm({
     }
 
     consultationFeeRef.current.value =
-      visitType === "followup"
+      visitType === "FOLLOWUP"
         ? selectedDoctor.followup_fee || selectedDoctor.consultation_fee || ""
         : selectedDoctor.consultation_fee || "";
   };
@@ -70,6 +69,9 @@ export function usePatientRegistrationForm({
 const handleDoctorChange = async (e: ChangeEvent<HTMLSelectElement>) => {
   const doctorId = e.target.value;
   
+  let visitType = "NEW"; // Default for new patients
+  
+  // Only fetch consultation if patient already exists
   if (searchedPatient?.id) {
     try {
       const consultationResult = await dispatch(
@@ -77,9 +79,7 @@ const handleDoctorChange = async (e: ChangeEvent<HTMLSelectElement>) => {
       );
 
       if (consultationResult.meta.requestStatus === "fulfilled" && consultationResult.payload) {
-        const consultation = consultationResult.payload?.data || consultationResult.payload;
-        
-        let visitType = "NEW"; // Default to NEW if no consultation found
+        const consultation = consultationResult.payload;
         
         // ✅ PRIMARY CHECK: nextFollowUp date
         if (consultation?.nextFollowUp) {
@@ -108,6 +108,12 @@ const handleDoctorChange = async (e: ChangeEvent<HTMLSelectElement>) => {
     } catch (error) {
       console.error("Error fetching consultation:", error);
     }
+  } else {
+    // For new patients, set visitType and fee
+    if (visitTypeRef.current) {
+      visitTypeRef.current.value = visitType;
+    }
+    setFeeFromDoctorAndVisitType(doctorId, visitType);
   }
 };
 
@@ -297,9 +303,9 @@ const handleDoctorChange = async (e: ChangeEvent<HTMLSelectElement>) => {
 
       // Map visit type to enum value
       let visitTypeEnum = "NEW";
-      if (visitTypeRef.current?.value === "revisit") {
+      if (visitTypeRef.current?.value === "REVISIT") {
         visitTypeEnum = "REVISIT";
-      } else if (visitTypeRef.current?.value === "followup") {
+      } else if (visitTypeRef.current?.value === "FOLLOWUP") {
         visitTypeEnum = "FOLLOWUP";
       }
 

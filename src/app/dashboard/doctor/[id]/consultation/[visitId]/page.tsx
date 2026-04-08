@@ -17,6 +17,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { useConsultationPage } from "@/hooks/useConsultationPage";
+import Input from "@/components/ui/Input";
 
 const ConsultationPage = () => {
   const params = useParams();
@@ -93,7 +94,7 @@ const ConsultationPage = () => {
                     Symptom
                   </label>
                   <div className="flex gap-2">
-                    <input
+                    <Input
                       type="text"
                       value={hook.newSymptom}
                       onChange={(e) => hook.setNewSymptom(e.target.value)}
@@ -151,7 +152,7 @@ const ConsultationPage = () => {
                     Diagnosis
                   </label>
                   <div className="flex gap-2">
-                    <input
+                    <Input
                       type="text"
                       value={hook.newDiagnosis}
                       onChange={(e) => hook.setNewDiagnosis(e.target.value)}
@@ -208,7 +209,7 @@ const ConsultationPage = () => {
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5 font-poppins">
                     Medicine Name
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={hook.newMedicine.name}
                     onChange={(e) =>
@@ -222,7 +223,7 @@ const ConsultationPage = () => {
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5 font-poppins">
                     Dosage
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={hook.newMedicine.dosage}
                     onChange={(e) =>
@@ -236,7 +237,7 @@ const ConsultationPage = () => {
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5 font-poppins">
                     Frequency
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={hook.newMedicine.frequency}
                     onChange={(e) =>
@@ -253,7 +254,7 @@ const ConsultationPage = () => {
                   <label className="block text-xs font-semibold text-gray-700 mb-1.5 font-poppins">
                     Duration
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={hook.newMedicine.duration}
                     onChange={(e) =>
@@ -312,7 +313,7 @@ const ConsultationPage = () => {
                   Next Follow-up
                 </h3>
               </div>
-              <input
+              <Input
                 type="date"
                 name="nextFollowUp"
                 value={hook.formData.nextFollowUp}

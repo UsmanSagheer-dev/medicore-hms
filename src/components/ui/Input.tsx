@@ -10,7 +10,22 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, label, error, icon, suffixIcon, labelClassName, onChange, onKeyDown, value, ...props }, ref) => {
+  (
+    {
+      className,
+      type,
+      label,
+      error,
+      icon,
+      suffixIcon,
+      labelClassName,
+      onChange,
+      onKeyDown,
+      value,
+      ...props
+    },
+    ref,
+  ) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (onChange) {
         onChange(e);
@@ -26,7 +41,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className={`block text-sm font-regular text-gray-700 mb-1 ${labelClassName || ''}`}>
+          <label
+            className={`block text-sm font-regular text-gray-700 mb-1 ${labelClassName || ""}`}
+          >
             {label}
           </label>
         )}
@@ -39,7 +56,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             type={type}
             value={value}
-            className={`w-full border rounded-md py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400 transition-all duration-200 ${
+            className={`w-full border rounded-md py-2 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-400 transition-all duration-200 ${
               error
                 ? "border-red-500 focus:ring-red-500"
                 : "border-gray-300 focus:ring-[#2C4D9C]"

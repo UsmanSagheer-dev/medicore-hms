@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "https://medicore-backend-psi.vercel.app/api/:path*",
+        destination: "https://medicore-backend-jet.vercel.app/api/:path*",
       },
     ];
   },

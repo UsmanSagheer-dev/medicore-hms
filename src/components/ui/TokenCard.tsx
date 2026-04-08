@@ -16,9 +16,8 @@ const TokenCard: React.FC<TokenData> = ({
   fee,
   isPaid,
   visitType,
-  type = "follow-up/New",
 }) => {
-  const badgeType = visitType || type;
+  const badgeType = visitType;
 
   return (
     <div className="max-w-full w-full bg-white border border-black rounded-lg overflow-hidden font-sans text-black shadow-md relative print:shadow-none print:border shrink-0">
@@ -44,15 +43,15 @@ const TokenCard: React.FC<TokenData> = ({
 
         <div className="space-y-0.5 text-[11px] font-semibold leading-tight">
           <div className="flex gap-2">
-            <span className="min-w-[65px] opacity-70 font-bold">Patient:</span>
+            <span className="min-w-16.25 opacity-70 font-bold">Patient:</span>
             <span>{patientName}</span>
           </div>
           <div className="flex gap-2">
-            <span className="min-w-[65px] opacity-70 font-bold">Father:</span>
+            <span className="min-w-16.25 opacity-70 font-bold">Father:</span>
             <span>{fatherName}</span>
           </div>
           <div className="flex gap-2">
-            <span className="min-w-[65px] opacity-70 font-bold">
+            <span className="min-w-16.25 opacity-70 font-bold">
               Age/Gender:
             </span>
             <span>
@@ -60,21 +59,21 @@ const TokenCard: React.FC<TokenData> = ({
             </span>
           </div>
           <div className="flex gap-2">
-            <span className="min-w-[65px] opacity-70 font-bold">CNIC:</span>
+            <span className="min-w-16.25 opacity-70 font-bold">CNIC:</span>
             <span>{cnic}</span>
           </div>
           <div className="flex gap-2">
-            <span className="min-w-[65px] opacity-70 font-bold">Doctor:</span>
+            <span className="min-w-16.25 opacity-70 font-bold">Doctor:</span>
             <span>{doctorName}</span>
           </div>
           <div className="flex gap-2">
-            <span className="min-w-[65px] opacity-70 font-bold">
+            <span className="min-w-16.25 opacity-70 font-bold">
               Specialty:
             </span>
             <span>{specialization}</span>
           </div>
           <div className="flex gap-2">
-            <span className="min-w-[65px] opacity-70 font-bold">Room No:</span>
+            <span className="min-w-16.25 opacity-70 font-bold">Room No:</span>
             <span>{roomNo}</span>
           </div>
 

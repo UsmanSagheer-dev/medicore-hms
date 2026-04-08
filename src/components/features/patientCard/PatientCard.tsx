@@ -24,7 +24,7 @@ type Patient = {
 
 const PatientCard = ({ patient }: { patient: Patient }) => {
   const router = useRouter();
-  const token = patient?.tokenNo ?? "token no";
+  const token = patient?.tokenNo ?? "N/A";
   const patientId = patient?.id;
   const status = patient?.status;
   const params = useParams();
@@ -37,7 +37,7 @@ const PatientCard = ({ patient }: { patient: Patient }) => {
   const dateTimeText =
     patient?.date || patient?.time
       ? `${patient?.date ?? ""}${patient?.date && patient?.time ? " " : ""}${patient?.time ?? ""}`
-      : "date and time";
+      : "-";
 
   const handleCallPatient = async () => {
     if (!patientId) return;
@@ -86,9 +86,9 @@ const PatientCard = ({ patient }: { patient: Patient }) => {
     <div className="flex w-full max-w-90 flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.12)]">
       <div className="bg-linear-to-r from-slate-950 via-slate-800 to-slate-950 px-5 py-4 text-white">
         <div className="flex items-center justify-between gap-3">
-          <div>
+          <div className="flex items-center gap-2">
             <p className="text-xs font-medium uppercase tracking-[0.28em] text-slate-300">
-              Token No
+              Token No:
             </p>
             <p className="mt-1 text-2xl font-semibold tracking-tight">
               {token}

@@ -32,11 +32,12 @@ const TokenList = ({ doctorId }: TokenListProps) => {
     () =>
       visits.map((visit, index) => ({
         id: visit.id || String(index + 1),
+        patientId: (visit as any).patientId,
         patientName: visit.patientName || "Unknown Patient",
         tokenNumber: String((visit as any).tokenNo || (visit as any).tokenNumber || index + 1).padStart(3, "0"),
         time: visit.time || "--:--",
         status: ((visit as any).status as string) || "waiting",
-        visitType: visit.visitType || "New",
+        visitType: visit.visitType || "NEW",
       })),
     [visits]
   );

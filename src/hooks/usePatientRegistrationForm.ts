@@ -7,7 +7,7 @@ import {
   createPatient,
   createPatientVisit,
   getPatientByCNIC,
-  getVistiByPatientId,
+  getLatestConsultation,
 } from "@/redux/slices/patientVisitSlice";
 
 interface UsePatientRegistrationFormProps {
@@ -60,16 +60,62 @@ export function usePatientRegistrationForm({
     }
 
     consultationFeeRef.current.value =
-      visitType === "followup"
+      visitType === "FOLLOWUP"
         ? selectedDoctor.followup_fee || selectedDoctor.consultation_fee || ""
         : selectedDoctor.consultation_fee || "";
   };
 
   // Event handlers
-  const handleDoctorChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const currentVisitType = visitTypeRef.current?.value || "";
-    setFeeFromDoctorAndVisitType(e.target.value, currentVisitType);
-  };
+const handleDoctorChange = async (e: ChangeEvent<HTMLSelectElement>) => {
+  const doctorId = e.target.value;
+  
+  let visitType = "NEW"; // Default for new patients
+  
+  // Only fetch consultation if patient already exists
+  if (searchedPatient?.id) {
+    try {
+      const consultationResult = await dispatch(
+        getLatestConsultation(searchedPatient.id),
+      );
+
+      if (consultationResult.meta.requestStatus === "fulfilled" && consultationResult.payload) {
+        const consultation = consultationResult.payload?.data || consultationResult.payload;
+        
+        // ✅ PRIMARY CHECK: nextFollowUp date
+        if (consultation?.nextFollowUp) {
+          const followUpDate = new Date(consultation.nextFollowUp);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          followUpDate.setHours(0, 0, 0, 0);
+          
+          if (followUpDate >= today) {
+            visitType = "FOLLOWUP"; 
+          } else {
+            visitType = "REVISIT";
+          }
+        } 
+        else if (consultation?.id) {
+         
+          visitType = "REVISIT";
+        }
+        
+        if (visitTypeRef.current) {
+          visitTypeRef.current.value = visitType;
+        }
+        
+        setFeeFromDoctorAndVisitType(doctorId, visitType);
+      }
+    } catch (error) {
+      console.error("Error fetching consultation:", error);
+    }
+  } else {
+    // For new patients, set visitType and fee
+    if (visitTypeRef.current) {
+      visitTypeRef.current.value = visitType;
+    }
+    setFeeFromDoctorAndVisitType(doctorId, visitType);
+  }
+};
 
   const handleVisitTypeChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const currentDoctorId = selectDoctorRef.current?.value || "";
@@ -83,13 +129,11 @@ export function usePatientRegistrationForm({
     setPatientFound(false);
     setSearchedPatient(null);
 
-    // Only search when CNIC is 13 digits
     if (cnic.length === 13) {
       setSearchLoading(true);
       try {
         const result = await dispatch(getPatientByCNIC(cnic));
         if (result.meta.requestStatus === "fulfilled") {
-          // Handle different response structures
           const patientData =
             result.payload?.patient || result.payload?.data || result.payload;
           if (
@@ -117,10 +161,8 @@ export function usePatientRegistrationForm({
       setSearchLoading(true);
 
       try {
-        const visitResult = await dispatch(
-          getVistiByPatientId(searchedPatient.id),
-        );
-
+     
+        // Fill basic patient information
         if (fullNameRef.current)
           fullNameRef.current.value =
             searchedPatient.fullName || searchedPatient.full_name || "";
@@ -139,20 +181,7 @@ export function usePatientRegistrationForm({
             searchedPatient.phoneNumber || searchedPatient.phone_number || "";
         if (cnicRef.current) cnicRef.current.value = searchedPatient.cnic || "";
 
-        // If there's visit history, set visit type to revisit
-        if (
-          visitResult.meta.requestStatus === "fulfilled" &&
-          visitResult.payload?.visits?.length > 0
-        ) {
-          if (visitTypeRef.current) visitTypeRef.current.value = "revisit";
-          // Update consultation fee based on revisit
-          const currentDoctorId = selectDoctorRef.current?.value || "";
-          if (currentDoctorId) {
-            setFeeFromDoctorAndVisitType(currentDoctorId, "revisit");
-          }
-        }
-
-        toast.success("Patient data loaded successfully!");
+        toast.success("Patient data loaded! Now select a doctor to auto-set follow-up type.");
       } catch (error) {
         toast.error("Error loading patient data");
         console.error("Error fetching patient visit:", error);
@@ -211,7 +240,6 @@ export function usePatientRegistrationForm({
       const doctorId = selectDoctorRef.current?.value || "";
       const selectedDoctor = activeDoctors.find((doc) => doc.id === doctorId);
 
-      // Step 1: Create Patient in Database
       const patientResult = await dispatch(
         createPatient({
           fullName: fullNameRef.current?.value || "",
@@ -275,9 +303,9 @@ export function usePatientRegistrationForm({
 
       // Map visit type to enum value
       let visitTypeEnum = "NEW";
-      if (visitTypeRef.current?.value === "revisit") {
+      if (visitTypeRef.current?.value === "REVISIT") {
         visitTypeEnum = "REVISIT";
-      } else if (visitTypeRef.current?.value === "followup") {
+      } else if (visitTypeRef.current?.value === "FOLLOWUP") {
         visitTypeEnum = "FOLLOWUP";
       }
 
@@ -352,11 +380,11 @@ export function usePatientRegistrationForm({
         isPaid: Boolean(createdVisit.isPaid ?? paymentStatus === "paid"),
         visitType: (() => {
           const vt =
-            createdVisit.visitType || visitTypeRef.current?.value || "new";
-          if (vt === "NEW" || vt === "new") return "New";
-          if (vt === "REVISIT" || vt === "revisit") return "Revisit";
-          if (vt === "FOLLOWUP" || vt === "followup") return "Follow up";
-          return "New";
+            createdVisit.visitType || visitTypeRef.current?.value || "NEW";
+          if (vt === "NEW" || vt === "NEW") return "NEW";
+          if (vt === "REVISIT" || vt === "REVISIT") return "REVISIT";
+          if (vt === "FOLLOWUP" || vt === "FOLLOWUP") return "FOLLOWUP";
+          return "NEW";
         })() as TokenData["visitType"],
       };
 

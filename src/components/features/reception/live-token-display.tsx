@@ -7,7 +7,7 @@ interface LiveTokenDisplayProps {
 
 function LiveTokenDisplay({ tokens }: LiveTokenDisplayProps) {
   return (
-    <div className="w-full md:w-1/2 flex flex-col gap-4 p-4 bg-gray-50 border-l border-gray-200 overflow-y-auto h-full rounded-lg">
+    <div className="w-full flex flex-col gap-4 p-4 border border-gray-200 md:border-l md:border-t-0 overflow-y-auto h-auto md:h-full rounded-lg">
       <div className="flex flex-col gap-4 items-center">
         {tokens.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-gray-400">

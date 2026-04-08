@@ -1,46 +1,17 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/lib/axios";
-
-export interface PatientVisit {
-  id?: string;
-  tokenNo: string;
-  patientName: string;
-  fatherName: string;
-  age: string;
-  gender: string;
-  cnic: string;
-  phoneNumber: string;
-  address: string;
-  doctorId: string;
-  doctorName: string;
-  specialization: string;
-  roomNo: string;
-  consultationFee: string;
-  discount?: string;
-  date: string;
-  time: string;
-  isPaid: boolean;
-  paymentStatus: "pending" | "paid";
-  visitType: "New" | "Follow up" | "Revisit";
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface PatientVisitState {
-  visits: PatientVisit[];
-  currentVisit: PatientVisit | null;
-  todayVisits: PatientVisit[];
-  loading: boolean;
-  error: string | null;
-  success: boolean;
-  mismatchWarning: boolean;
-  warningMessage: string | null;
-}
+import {
+  ConsultationData,
+  PatientVisit,
+  PatientVisitState,
+} from "@/types/types";
 
 const initialState: PatientVisitState = {
   visits: [],
   currentVisit: null,
   todayVisits: [],
+  latestConsultation: null,
+  endDoctorDay: false,
   loading: false,
   error: null,
   success: false,
@@ -178,7 +149,9 @@ export const deletePatientVisit = createAsyncThunk(
   "patientVisit/delete",
   async (visitId: string, { rejectWithValue }) => {
     try {
-      const response = await api.delete(`/patient-visits/${visitId}`);
+      const response = await api.put(`/visits/${visitId}/status`, {
+        status: "CANCELLED",
+      });
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -231,7 +204,6 @@ export const updatePaymentStatus = createAsyncThunk(
   },
 );
 
-
 export const callPatient = createAsyncThunk(
   "patientVisit/callPatient",
   async (visitId: string, { rejectWithValue }) => {
@@ -244,22 +216,37 @@ export const callPatient = createAsyncThunk(
   },
 );
 
-export interface ConsultationData {
-  visitId: string;
-  symptoms?: string;
-  diagnosis?: string;
-  prescription?: string;
-  medicines?: any;
-  testRecommendations?: string;
-  nextFollowUp?: string;
-  notes?: string;
-}
-
 export const createConsultation = createAsyncThunk(
   "patientVisit/createConsultation",
   async (consultationData: ConsultationData, { rejectWithValue }) => {
     try {
       const response = await api.post("/consultations", consultationData);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  },
+);
+
+export const endDoctorDay = createAsyncThunk(
+  "patientVisit/endDoctorDay",
+  async (doctorId: string, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/visits/end-day/${doctorId}`);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  },
+);
+
+export const getLatestConsultation = createAsyncThunk(
+  "patientVisit/getLatestConsultation",
+  async (patientId: string, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        `/consultations/patient/${patientId}/latest`,
+      );
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -487,7 +474,8 @@ export const patientVisitSlice = createSlice({
       .addCase(callPatient.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        const updatedVisit = action.payload.data || action.payload.visit || action.payload;
+        const updatedVisit =
+          action.payload.data || action.payload.visit || action.payload;
         const visitIndex = state.visits.findIndex(
           (v) => v.id === updatedVisit.id,
         );
@@ -541,6 +529,43 @@ export const patientVisitSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
         state.success = false;
+      })
+      .addCase(endDoctorDay.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(endDoctorDay.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.visits = state.visits.filter(
+          (visit: any) =>
+            visit.status !== "WAITING" && visit.status !== "INPROGRESS",
+        );
+        state.todayVisits = state.todayVisits.filter(
+          (visit: any) =>
+            visit.status !== "WAITING" && visit.status !== "INPROGRESS",
+        );
+        state.endDoctorDay = true;
+      })
+      .addCase(endDoctorDay.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        state.success = false;
+      })
+      .addCase(getLatestConsultation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getLatestConsultation.fulfilled, (state, action) => {
+        state.loading = false;
+        const consultation = action.payload?.data || action.payload;
+        state.latestConsultation = consultation;
+      })
+      .addCase(getLatestConsultation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        state.latestConsultation = null;
       });
   },
 });

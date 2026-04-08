@@ -43,9 +43,15 @@ function ReceptionistDashboard() {
     );
 
     return (
-        <div className="flex gap-4 h-full lg:h-[calc(100vh-140px)] overflow-hidden flex-wrap md:flex-nowrap">
-            <PatientRegistrationForm />
-            <LiveTokenDisplay tokens={tokens} />
+        <div className="h-full bg-white overflow-y-auto">
+            <div className="flex flex-col md:flex-row gap-4 h-auto md:h-full p-1">
+                <div className="w-full md:flex-2 min-w-0 h-full">
+                    <PatientRegistrationForm />
+                </div>
+                <div className="w-full md:flex-1 min-w-0 h-full">
+                    <LiveTokenDisplay tokens={tokens} />
+                </div>
+            </div>
         </div>
     );
 }

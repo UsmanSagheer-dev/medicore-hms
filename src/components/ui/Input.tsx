@@ -10,7 +10,22 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, label, error, icon, suffixIcon, labelClassName, onChange, onKeyDown, value, ...props }, ref) => {
+  (
+    {
+      className,
+      type,
+      label,
+      error,
+      icon,
+      suffixIcon,
+      labelClassName,
+      onChange,
+      onKeyDown,
+      value,
+      ...props
+    },
+    ref,
+  ) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       if (onChange) {
         onChange(e);
@@ -26,7 +41,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className={`block text-sm font-regular text-gray-700 mb-1 ${labelClassName || ''}`}>
+          <label
+            className={`block text-sm font-regular text-gray-700 mb-1 ${labelClassName || ""}`}
+          >
             {label}
           </label>
         )}

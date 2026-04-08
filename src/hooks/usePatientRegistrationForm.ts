@@ -79,7 +79,7 @@ const handleDoctorChange = async (e: ChangeEvent<HTMLSelectElement>) => {
       );
 
       if (consultationResult.meta.requestStatus === "fulfilled" && consultationResult.payload) {
-        const consultation = consultationResult.payload;
+        const consultation = consultationResult.payload?.data || consultationResult.payload;
         
         // ✅ PRIMARY CHECK: nextFollowUp date
         if (consultation?.nextFollowUp) {
@@ -380,11 +380,11 @@ const handleDoctorChange = async (e: ChangeEvent<HTMLSelectElement>) => {
         isPaid: Boolean(createdVisit.isPaid ?? paymentStatus === "paid"),
         visitType: (() => {
           const vt =
-            createdVisit.visitType || visitTypeRef.current?.value || "new";
-          if (vt === "NEW" || vt === "new") return "New";
-          if (vt === "REVISIT" || vt === "revisit") return "Revisit";
-          if (vt === "FOLLOWUP" || vt === "followup") return "Follow up";
-          return "New";
+            createdVisit.visitType || visitTypeRef.current?.value || "NEW";
+          if (vt === "NEW" || vt === "NEW") return "NEW";
+          if (vt === "REVISIT" || vt === "REVISIT") return "REVISIT";
+          if (vt === "FOLLOWUP" || vt === "FOLLOWUP") return "FOLLOWUP";
+          return "NEW";
         })() as TokenData["visitType"],
       };
 

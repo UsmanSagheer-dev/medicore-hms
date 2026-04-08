@@ -6,7 +6,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
-import { loginUser, clearError, getMe, logout } from "@/redux/slices/authSlice";
+import { loginUser, clearError } from "@/redux/slices/authSlice";
 
 import Button from "@/components/ui/Button";
 
@@ -16,68 +16,52 @@ function Login() {
   const { loading, error, isAuthenticated, user } = useAppSelector(
     (state) => state.auth,
   );
-  const hasVerifiedAuth = useRef(false);
-  const [authVerified, setAuthVerified] = useState(false);
+  const hasRedirected = useRef(false);
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
 
+  // Handle redirect after successful login
   useEffect(() => {
-    const verifyAuth = async () => {
-      if (hasVerifiedAuth.current) return;
+    if (hasRedirected.current) return;
 
-      if (isAuthenticated && user) {
-        hasVerifiedAuth.current = true;
-        try {
-          await dispatch(getMe()).unwrap();
-          setAuthVerified(true);
-        } catch (e) {
-          console.log("Auth verification failed - clearing stale data");
-          dispatch(logout());
-          setAuthVerified(false);
-        }
-      }
-    };
-
-    verifyAuth();
-  }, [dispatch, isAuthenticated, user]);
-
-  useEffect(() => {
-    if (!authVerified || !isAuthenticated || !user) return;
-
-    const handleRedirect = () => {
+    if (isAuthenticated && user) {
+      hasRedirected.current = true;
       const role = user.role?.toLowerCase();
-      if (role === "doctor") {
-        const doctorId = user.doctor?.id;
-        console.log("Doctor ID for redirection:", doctorId);
-
-        if (doctorId) {
-          window.location.href = `/dashboard/doctor/${doctorId}`;
-          toast.success(`Welcome back, ${user.name}`);
+      
+      const redirect = () => {
+        if (role === "doctor") {
+          const doctorId = user.doctor?.id;
+          if (doctorId) {
+            window.location.href = `/dashboard/doctor/${doctorId}`;
+            toast.success(`Welcome back, ${user.name}`);
+          } else {
+            router.push("/onboarding/doctor/pending");
+            dispatch(clearError());
+          }
+        } else if (role === "receptionist") {
+          const receptionistId = user.receptionist?.id;
+          if (receptionistId) {
+            window.location.href = `/dashboard/${role}`;
+            toast.success(`Welcome back, ${user.name}`);
+          } else {
+            router.push("/onboarding/receptionist/pending");
+            dispatch(clearError());
+          }
         } else {
-          router.push("/onboarding/doctor/pending");
-          dispatch(clearError());
-        }
-      } else if (role === "receptionist") {
-        const receptionistId = user.receptionist?.id;
-        if (receptionistId) {
           window.location.href = `/dashboard/${role}`;
           toast.success(`Welcome back, ${user.name}`);
-        } else {
-          router.push("/onboarding/receptionist/pending");
-          dispatch(clearError());
         }
-      } else {
-        window.location.href = `/dashboard/${role}`;
-        toast.success(`Welcome back, ${user.name}`);
-      }
-    };
+      };
 
-    handleRedirect();
-  }, [authVerified, isAuthenticated, user, router, dispatch]);
+      // Small delay to ensure Redux state is fully updated
+      setTimeout(redirect, 100);
+    }
+  }, [isAuthenticated, user, router, dispatch]);
 
+  // Handle errors
   useEffect(() => {
     if (error) {
       toast.error(error);

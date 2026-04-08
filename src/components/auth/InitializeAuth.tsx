@@ -6,33 +6,32 @@ import { getMe, logout } from "@/redux/slices/authSlice";
 
 export default function InitializeAuth() {
   const dispatch = useAppDispatch();
+  const token = useAppSelector((state) => state.auth.token);
   const user = useAppSelector((state) => state.auth.user);
-  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const hasAttemptedAuth = useRef(false);
 
   useEffect(() => {
     // Only attempt once to prevent infinite loops
     if (hasAttemptedAuth.current) return;
 
-    if (!user && isAuthenticated) {
+    // Only try to fetch user if we have a token but no user data
+    if (token && !user) {
       hasAttemptedAuth.current = true;
       const initializeUser = async () => {
         try {
           const result = await dispatch(getMe()).unwrap();
           if (!result) {
-            // If no user data returned, logout
             dispatch(logout());
           }
         } catch (error) {
           console.log("Auth initialization failed - token likely expired");
-          // Dispatch logout to clear stale state
           dispatch(logout());
         }
       };
 
       initializeUser();
     }
-  }, [dispatch, user, isAuthenticated]);
+  }, [token, user, dispatch]);
 
   return null;
 }

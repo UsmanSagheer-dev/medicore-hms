@@ -130,7 +130,8 @@ export const authSlice = createSlice({
           if (doctorId) {
             document.cookie = `doctorId=${doctorId}; path=/; max-age=604800; SameSite=Lax`;
           }
-          const receptionistId = userData.receptionist?.id || userData.receptionistId;
+          const receptionistId =
+            userData.receptionist?.id || userData.receptionistId;
           if (receptionistId) {
             document.cookie = `receptionistId=${receptionistId}; path=/; max-age=604800; SameSite=Lax`;
           }
@@ -159,7 +160,8 @@ export const authSlice = createSlice({
           if (doctorId) {
             document.cookie = `doctorId=${doctorId}; path=/; max-age=604800; SameSite=Lax`;
           }
-          const receptionistId = userData.receptionist?.id || userData.receptionistId;
+          const receptionistId =
+            userData.receptionist?.id || userData.receptionistId;
           if (receptionistId) {
             document.cookie = `receptionistId=${receptionistId}; path=/; max-age=604800; SameSite=Lax`;
           }
@@ -217,7 +219,8 @@ export const authSlice = createSlice({
       })
       .addCase(getMe.fulfilled, (state, action) => {
         state.loading = false;
-        const userData = action.payload.user || action.payload.data || action.payload;
+        const userData =
+          action.payload.user || action.payload.data || action.payload;
         state.user = userData;
         state.isAuthenticated = !!userData;
         if (typeof window !== "undefined" && userData) {
@@ -226,7 +229,8 @@ export const authSlice = createSlice({
           if (doctorId) {
             document.cookie = `doctorId=${doctorId}; path=/; max-age=604800; SameSite=Lax`;
           }
-          const receptionistId = userData.receptionist?.id || userData.receptionistId;
+          const receptionistId =
+            userData.receptionist?.id || userData.receptionistId;
           if (receptionistId) {
             document.cookie = `receptionistId=${receptionistId}; path=/; max-age=604800; SameSite=Lax`;
           }

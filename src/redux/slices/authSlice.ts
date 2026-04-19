@@ -30,7 +30,7 @@ export const registerUser = createAsyncThunk(
   async (userData: any, { rejectWithValue }) => {
     try {
       console.log("Registering with:", userData);
-      const response = await api.post("/api/auth/register", userData);
+      const response = await api.post("/auth/register", userData);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -42,7 +42,7 @@ export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async (userData: any, { rejectWithValue }) => {
     try {
-      const response = await api.post("/api/auth/login", userData);
+      const response = await api.post("/auth/login", userData);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -54,7 +54,7 @@ export const logoutUser = createAsyncThunk(
   "/auth/logout",
   async (_, { rejectWithValue }) => {
     try {
-      await api.post("/api/auth/logout");
+      await api.post("/auth/logout");
       return true;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -66,7 +66,7 @@ export const getMe = createAsyncThunk(
   "auth/getMe",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get("/api/auth/me");
+      const response = await api.get("/auth/me");
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);

@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { Mail, Lock, LogIn } from "lucide-react";
+import { Mail, Lock, LogIn, Eye, EyeOff } from "lucide-react";
 import Input from "@/components/ui/Input";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { useRouter } from "next/navigation";
@@ -22,6 +22,7 @@ function Login() {
     email: "",
     password: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   // Handle redirect after successful login
   useEffect(() => {
@@ -123,13 +124,30 @@ function Login() {
             </label>
           </div>
           <Input
-            type="password"
+            type={showPassword ? "text" : "password"}
             name="password"
             value={formData.password}
             onChange={handleChange}
             placeholder="••••••••"
             className="bg-white/5 border-white/10 text-white placeholder:text-white/40 h-12 rounded-xl focus:ring-2 focus:ring-blue-500/50"
             icon={<Lock className="w-5 h-5 text-white/40" />}
+            suffixIcon={
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowPassword(!showPassword);
+                }}
+                className="text-white/40 hover:text-white/70 transition-colors cursor-pointer"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
+            }
           />
 
           <div className="flex justify-end">

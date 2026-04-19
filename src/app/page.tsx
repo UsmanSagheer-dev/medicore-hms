@@ -21,7 +21,7 @@ export default function Home() {
         const role = user.role?.toLowerCase();
         
         if (role === "doctor") {
-          router.push(`/dashboard/doctor/${user.id || user._id}`);
+          router.push(`/dashboard/doctor/${user.id}`);
         } else if (role === "admin") {
           router.push("/dashboard/admin");
         } else if (role === "receptionist") {
@@ -41,7 +41,7 @@ export default function Home() {
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <div className="flex flex-col items-center gap-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-        <p className="text-gray-600 dark:text-gray-400">Redirecting...</p>
+        <div className="text-gray-600 dark:text-gray-400 animate-spin"></div>
       </div>
     </div>
   );

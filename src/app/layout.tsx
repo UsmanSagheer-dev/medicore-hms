@@ -33,6 +33,7 @@ export default function RootLayout({
   const pathname = usePathname();
   const isAuthPage = pathname?.startsWith("/auth");
   const isOnboardingPage = pathname?.startsWith("/onboarding");
+  const isHomePage = pathname === "/";
 
   return (
     <html lang="en">
@@ -42,7 +43,7 @@ export default function RootLayout({
       >
         <ReduxProvider>
           <InitializeAuth />
-          {!isAuthPage && !isOnboardingPage && <Header />}
+          {!isAuthPage && !isOnboardingPage && !isHomePage && <Header />}
           <main className="flex-1 overflow-hidden ">{children}</main>
           <Toaster position="top-right" />
         </ReduxProvider>

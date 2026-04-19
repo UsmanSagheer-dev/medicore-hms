@@ -14,7 +14,7 @@ const Header = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
+
   // Get authenticated user from Redux (already hydrated via InitializeAuth)
   const user = useAppSelector((state) => state.auth.user);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
@@ -24,8 +24,8 @@ const Header = () => {
     setIsMounted(true);
   }, []);
 
-  const handleLogout = () => {
-    dispatch(logoutUser());
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
     setIsDropdownOpen(false);
     router.push("/auth/login");
   };
@@ -38,7 +38,7 @@ const Header = () => {
       if (doctorId) {
         return `/dashboard/doctor/${doctorId}/profile`;
       }
-      return "/dashboard/doctor/profile"; 
+      return "/dashboard/doctor/profile";
     }
     if (role === "receptionist") return "/dashboard/receptionist/profile";
     return "/profile";
@@ -76,11 +76,14 @@ const Header = () => {
     return roleMap[role?.toLowerCase()] || role || "User";
   };
 
-  const userInfo = useMemo(() => ({
-    name: user?.name || "User",
-    role: formatRole(user?.role),
-    initials: getInitials(user?.name),
-  }), [user?.name, user?.role]);
+  const userInfo = useMemo(
+    () => ({
+      name: user?.name || "User",
+      role: formatRole(user?.role),
+      initials: getInitials(user?.name),
+    }),
+    [user?.name, user?.role],
+  );
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

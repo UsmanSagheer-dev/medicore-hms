@@ -2,19 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { User, Mail, Lock, UserPlus, Phone, Loader2 } from 'lucide-react';
+import { User, Mail, Lock, UserPlus } from 'lucide-react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import Select from '@/components/ui/Select';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
-import { registerUser, clearError } from '@/redux/slices/authSlice';
+import { registerUser, clearError, clearJustRegistered } from '@/redux/slices/authSlice';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 function Signup() {
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const { loading, error, isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const { loading, error, justRegistered, user } = useAppSelector((state) => state.auth);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -24,35 +24,30 @@ function Signup() {
     role: 'ADMIN' as 'ADMIN' | 'DOCTOR' | 'RECEPTIONIST',
   });
 
+  // ✅ Redirect - justRegistered flag دیکھو
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (justRegistered && user) {
+      dispatch(clearJustRegistered());
       const role = user.role?.toLowerCase();
-      if (role) {
-        // Redirect to onboarding instead of dashboard
-        if (role === 'admin') {
-          router.push('/dashboard/admin');
-        } else if (role === 'receptionist') {
-          router.push('/onboarding/reception');
-        } else {
-          router.push(`/onboarding/${role}`);
-        }
-        toast.success(`Welcome ${user.name}`);
+      if (role === 'admin') {
+        router.push('/dashboard/admin');
+      } else if (role === 'receptionist') {
+        router.push('/onboarding/reception');
+      } else if (role) {
+        router.push(`/onboarding/${role}`);
       }
+      toast.success(`Welcome ${user.name}`);
     }
-    
-    return () => {
-      dispatch(clearError());
-    };
-  }, [isAuthenticated, user, router, dispatch]);
+  }, [justRegistered, user]);
+  
 
+  // ✅ Error handle کرو
   useEffect(() => {
     if (error) {
       toast.error(error);
-    }
-    return()=>{
       dispatch(clearError());
     }
-  }, [error,dispatch]);
+  }, [error]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -61,15 +56,12 @@ function Signup() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
       return;
     }
-
     const { confirmPassword, ...registerData } = formData;
     dispatch(registerUser(registerData));
-    clearError();
   };
 
   return (
@@ -154,13 +146,21 @@ function Signup() {
         </div>
 
         <div className="flex items-start space-x-2 ml-1 pb-2">
-          <input type="checkbox" id="terms" required className="mt-1 rounded border-white/20 bg-white/5 text-blue-500 focus:ring-blue-500/50" />
+          <input
+            type="checkbox"
+            id="terms"
+            required
+            className="mt-1 rounded border-white/20 bg-white/5 text-blue-500 focus:ring-blue-500/50"
+          />
           <label htmlFor="terms" className="text-sm text-white/70 leading-snug">
-            I agree to the <Link href="#" className="underline text-blue-400">Terms of Service</Link> and <Link href="#" className="underline text-blue-400">Privacy Policy</Link>
+            I agree to the{" "}
+            <Link href="#" className="underline text-blue-400">Terms of Service</Link>
+            {" "}and{" "}
+            <Link href="#" className="underline text-blue-400">Privacy Policy</Link>
           </label>
         </div>
 
-        <Button 
+        <Button
           type="submit"
           isLoading={loading}
           className='w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2'
@@ -173,7 +173,10 @@ function Signup() {
       <div className="mt-6 text-center">
         <p className="text-white/60 text-sm">
           Already have an account?{" "}
-          <Link href="/auth/login" className="text-white font-semibold hover:underline decoration-blue-500 underline-offset-4">
+          <Link
+            href="/auth/login"
+            className="text-white font-semibold hover:underline decoration-blue-500 underline-offset-4"
+          >
             Sign In
           </Link>
         </p>

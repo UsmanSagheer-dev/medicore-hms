@@ -30,34 +30,45 @@ function Login() {
     if (isAuthenticated && user) {
       hasRedirected.current = true;
       const role = user.role?.toLowerCase();
-      
-      const redirect = () => {
+
+      const redirect = async () => {
+        // Wait longer for cookies to be set and visible
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
         if (role === "doctor") {
           const doctorId = user.doctor?.id;
           if (doctorId) {
-            window.location.href = `/dashboard/doctor/${doctorId}`;
             toast.success(`Welcome back, ${user.name}`);
+            console.log("➡️ Redirecting to /dashboard/doctor/", doctorId);
+            router.push(`/dashboard/doctor/${doctorId}`);
           } else {
-            router.push("/onboarding/doctor/pending");
             dispatch(clearError());
+            router.push("/onboarding/doctor/pending");
           }
         } else if (role === "receptionist") {
           const receptionistId = user.receptionist?.id;
           if (receptionistId) {
-            window.location.href = `/dashboard/${role}`;
             toast.success(`Welcome back, ${user.name}`);
+            console.log("➡️ Redirecting to /dashboard/receptionist");
+            router.push(`/dashboard/receptionist`);
           } else {
-            router.push("/onboarding/receptionist/pending");
             dispatch(clearError());
+            router.push("/onboarding/receptionist/pending");
           }
-        } else {
-          window.location.href = `/dashboard/${role}`;
+        } else if (role === "admin") {
           toast.success(`Welcome back, ${user.name}`);
+          // Force full page reload for admin to ensure cookies are sent
+          setTimeout(() => {
+            window.location.href = "/dashboard/admin";
+          }, 500);
+        } else {
+          console.log("⚠️ Unknown role:", role);
+          toast.success(`Welcome back, ${user.name}`);
+          router.push(`/dashboard/${role}`);
         }
       };
 
-      // Small delay to ensure Redux state is fully updated
-      setTimeout(redirect, 100);
+      redirect();
     }
   }, [isAuthenticated, user, router, dispatch]);
 

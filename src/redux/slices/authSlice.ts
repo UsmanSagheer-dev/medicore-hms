@@ -7,6 +7,7 @@ interface AuthState {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
+  justRegistered: boolean;
 }
 
 const getInitialUser = () => {
@@ -17,19 +18,26 @@ const getInitialUser = () => {
   return null;
 };
 
+const getInitialToken = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("authToken");
+  }
+  return null;
+};
+
 const initialState: AuthState = {
   user: getInitialUser(),
-  token: null,
+  token: getInitialToken(),
   isAuthenticated: !!getInitialUser(),
   loading: false,
   error: null,
+  justRegistered: false,
 };
 
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
   async (userData: any, { rejectWithValue }) => {
     try {
-      console.log("Registering with:", userData);
       const response = await api.post("/auth/register", userData);
       return response.data;
     } catch (error: any) {
@@ -74,6 +82,44 @@ export const getMe = createAsyncThunk(
   },
 );
 
+const clearCookies = () => {
+  const options = [
+    "token",
+    "userRole",
+    "doctorId",
+    "receptionistId",
+    "authToken",
+  ];
+  options.forEach((name) => {
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+    document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure`;
+  });
+};
+
+const setUserCookies = (userData: any) => {
+  if (!userData) return;
+
+  if (userData.role) {
+    const role = userData.role.toLowerCase();
+    // Try multiple cookie settings in case some don't work
+    document.cookie = `userRole=${role}; path=/; max-age=604800`;
+    document.cookie = `userRole=${role}; path=/; max-age=604800; SameSite=Lax`;
+  }
+
+  const doctorId = userData.doctor?.id || userData.doctorId;
+  if (doctorId) {
+    document.cookie = `doctorId=${doctorId}; path=/; max-age=604800`;
+    document.cookie = `doctorId=${doctorId}; path=/; max-age=604800; SameSite=Lax`;
+  }
+
+  const receptionistId = userData.receptionist?.id || userData.receptionistId;
+  if (receptionistId) {
+    document.cookie = `receptionistId=${receptionistId}; path=/; max-age=604800`;
+    document.cookie = `receptionistId=${receptionistId}; path=/; max-age=604800; SameSite=Lax`;
+  }
+};
+
 export const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -91,26 +137,23 @@ export const authSlice = createSlice({
       state.token = null;
       state.isAuthenticated = false;
       state.error = null;
+      state.justRegistered = false;
       if (typeof window !== "undefined") {
         localStorage.removeItem("user");
-        document.cookie =
-          "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        document.cookie =
-          "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        document.cookie =
-          "doctorId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        document.cookie =
-          "receptionistId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        document.cookie =
-          "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        clearCookies();
       }
     },
     clearError: (state) => {
       state.error = null;
     },
+    clearJustRegistered: (state) => {
+      // ✅ نیا reducer
+      state.justRegistered = false;
+    },
   },
   extraReducers: (builder) => {
     builder
+      // Register
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -118,29 +161,28 @@ export const authSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
+        state.justRegistered = true;
         const userData = action.payload.user || action.payload;
+        const token = action.payload.token || action.payload.authToken;
         state.user = userData;
-        state.token = null;
+        state.token = token;
         if (typeof window !== "undefined" && userData) {
           localStorage.setItem("user", JSON.stringify(userData));
-          if (userData.role) {
-            document.cookie = `userRole=${userData.role.toLowerCase()}; path=/; max-age=604800; SameSite=Lax`;
+          if (token) {
+            localStorage.setItem("authToken", token);
+            document.cookie = `authToken=${token}; path=/; max-age=604800; SameSite=Lax`;
           }
-          const doctorId = userData.doctor?.id;
-          if (doctorId) {
-            document.cookie = `doctorId=${doctorId}; path=/; max-age=604800; SameSite=Lax`;
-          }
-          const receptionistId =
-            userData.receptionist?.id || userData.receptionistId;
-          if (receptionistId) {
-            document.cookie = `receptionistId=${receptionistId}; path=/; max-age=604800; SameSite=Lax`;
-          }
+          setUserCookies(userData);
         }
+        console.log("Full payload:", action.payload);
+        console.log("Cookies after register:", document.cookie);
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
+
+      // Login
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -148,29 +190,28 @@ export const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
+        state.justRegistered = false;
         const userData = action.payload.user || action.payload;
+        const token = action.payload.token || action.payload.authToken;
         state.user = userData;
-        state.token = null;
+        state.token = token;
         if (typeof window !== "undefined" && userData) {
           localStorage.setItem("user", JSON.stringify(userData));
-          if (userData.role) {
-            document.cookie = `userRole=${userData.role.toLowerCase()}; path=/; max-age=604800; SameSite=Lax`;
+          if (token) {
+            localStorage.setItem("authToken", token);
+
+            const cookieValue = `authToken=${token}; path=/; max-age=604800; SameSite=Lax`;
+            document.cookie = cookieValue;
           }
-          const doctorId = userData.doctor?.id || userData.doctorId;
-          if (doctorId) {
-            document.cookie = `doctorId=${doctorId}; path=/; max-age=604800; SameSite=Lax`;
-          }
-          const receptionistId =
-            userData.receptionist?.id || userData.receptionistId;
-          if (receptionistId) {
-            document.cookie = `receptionistId=${receptionistId}; path=/; max-age=604800; SameSite=Lax`;
-          }
+          setUserCookies(userData);
         }
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
+
+      // Logout
       .addCase(logoutUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -180,18 +221,10 @@ export const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.token = null;
+        state.justRegistered = false;
         if (typeof window !== "undefined") {
           localStorage.removeItem("user");
-          document.cookie =
-            "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie =
-            "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie =
-            "doctorId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie =
-            "receptionistId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie =
-            "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          clearCookies();
         }
       })
       .addCase(logoutUser.rejected, (state) => {
@@ -199,20 +232,14 @@ export const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.token = null;
+        state.justRegistered = false;
         if (typeof window !== "undefined") {
           localStorage.removeItem("user");
-          document.cookie =
-            "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie =
-            "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie =
-            "doctorId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie =
-            "receptionistId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie =
-            "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          clearCookies();
         }
       })
+
+      // GetMe
       .addCase(getMe.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -221,22 +248,18 @@ export const authSlice = createSlice({
         state.loading = false;
         const userData =
           action.payload.user || action.payload.data || action.payload;
+        const token = action.payload.token || action.payload.authToken;
         state.user = userData;
         state.isAuthenticated = !!userData;
+        if (token) {
+          state.token = token;
+        }
         if (typeof window !== "undefined" && userData) {
           localStorage.setItem("user", JSON.stringify(userData));
-          const doctorId = userData.doctor?.id;
-          if (doctorId) {
-            document.cookie = `doctorId=${doctorId}; path=/; max-age=604800; SameSite=Lax`;
+          if (token) {
+            localStorage.setItem("authToken", token);
           }
-          const receptionistId =
-            userData.receptionist?.id || userData.receptionistId;
-          if (receptionistId) {
-            document.cookie = `receptionistId=${receptionistId}; path=/; max-age=604800; SameSite=Lax`;
-          }
-          if (userData.role) {
-            document.cookie = `userRole=${userData.role.toLowerCase()}; path=/; max-age=604800; SameSite=Lax`;
-          }
+          setUserCookies(userData);
         }
       })
       .addCase(getMe.rejected, (state) => {
@@ -244,23 +267,14 @@ export const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.token = null;
-        // Clear localStorage and cookies when auth check fails (token expired)
         if (typeof window !== "undefined") {
           localStorage.removeItem("user");
-          document.cookie =
-            "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie =
-            "userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie =
-            "doctorId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie =
-            "receptionistId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-          document.cookie =
-            "authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+          clearCookies();
         }
       });
   },
 });
 
-export const { setCredentials, logout, clearError } = authSlice.actions;
+export const { setCredentials, logout, clearError, clearJustRegistered } =
+  authSlice.actions;
 export default authSlice.reducer;

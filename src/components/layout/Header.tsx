@@ -102,7 +102,7 @@ const Header = () => {
   }, [isDropdownOpen]);
 
   return (
-    <header className="h-[70px] bg-white border-b border-gray-200 px-6 flex items-center justify-between sticky top-0 z-50 shadow-sm font-sans shrink-0">
+    <header className="h-17.5 bg-white border-b border-gray-200 px-6 flex items-center justify-between sticky top-0 z-50 shadow-sm font-sans shrink-0">
       <div className="flex items-center gap-4">
         <div className="bg-blue-600 p-2 rounded-lg">
           <svg

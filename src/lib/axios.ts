@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://medicore-backend-jet.vercel.app',
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://medicore-backend-jet.vercel.app/api',
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',

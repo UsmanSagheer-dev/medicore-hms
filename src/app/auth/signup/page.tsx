@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { User, Mail, Lock, UserPlus } from 'lucide-react';
+import { User, Mail, Lock, UserPlus, Eye, EyeOff } from 'lucide-react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import Select from '@/components/ui/Select';
@@ -23,6 +23,9 @@ function Signup() {
     confirmPassword: '',
     role: 'ADMIN' as 'ADMIN' | 'DOCTOR' | 'RECEPTIONIST',
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // ✅ Redirect - justRegistered flag دیکھو
   useEffect(() => {
@@ -120,7 +123,7 @@ function Signup() {
           <div className='space-y-1.5'>
             <label className='text-sm font-medium text-white/90 ml-1'>Password</label>
             <Input
-              type='password'
+              type={showPassword ? 'text' : 'password'}
               name='password'
               value={formData.password}
               onChange={handleChange}
@@ -128,12 +131,29 @@ function Signup() {
               required
               className='bg-white/5 border-white/10 text-white placeholder:text-white/40 h-11 rounded-xl focus:ring-2 focus:ring-blue-500/50'
               icon={<Lock className='w-4 h-4 text-white/40' />}
+              suffixIcon={
+                <button
+                  type='button'
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowPassword(!showPassword);
+                  }}
+                  className='text-white/40 hover:text-white/70 transition-colors cursor-pointer'
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeOff className='w-4 h-4' />
+                  ) : (
+                    <Eye className='w-4 h-4' />
+                  )}
+                </button>
+              }
             />
           </div>
           <div className='space-y-1.5'>
             <label className='text-sm font-medium text-white/90 ml-1'>Confirm Password</label>
             <Input
-              type='password'
+              type={showConfirmPassword ? 'text' : 'password'}
               name='confirmPassword'
               value={formData.confirmPassword}
               onChange={handleChange}
@@ -141,6 +161,23 @@ function Signup() {
               required
               className='bg-white/5 border-white/10 text-white placeholder:text-white/40 h-11 rounded-xl focus:ring-2 focus:ring-blue-500/50'
               icon={<Lock className='w-4 h-4 text-white/40' />}
+              suffixIcon={
+                <button
+                  type='button'
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowConfirmPassword(!showConfirmPassword);
+                  }}
+                  className='text-white/40 hover:text-white/70 transition-colors cursor-pointer'
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className='w-4 h-4' />
+                  ) : (
+                    <Eye className='w-4 h-4' />
+                  )}
+                </button>
+              }
             />
           </div>
         </div>

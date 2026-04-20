@@ -24,7 +24,7 @@ import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import toast from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { updateDoctorProfile, resetDoctorState } from "@/redux/slices/doctorSlice";
+import { submitDoctorProfile, resetDoctorState } from "@/redux/slices/doctorSlice";
 import { useEffect, useRef } from "react";
 import { useDoctorOnboarding } from "@/hooks/useDoctorOnboarding";
 

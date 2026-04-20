@@ -38,7 +38,6 @@ const Sidebar = () => {
   const userRole = user?.role?.toLowerCase() || "doctor";
   const doctorId = user?.doctor?.id || user?.doctorId;
 
-  // Different sidebar items for different user roles
   const sidebarConfig: SidebarConfig = {
     doctor: [
       {
@@ -172,10 +171,7 @@ const Sidebar = () => {
 
   const isActiveRoute = (href: string) => {
     if (href === pathname) return true;
-    // Check if current path starts with the href (for nested routes)
-    if (pathname.startsWith(href) && href !== `/dashboard/${userRole}`) {
-      return true;
-    }
+
     return false;
   };
 
@@ -196,7 +192,13 @@ const Sidebar = () => {
       <div className="p-4 border-b border-gray-100 flex items-center justify-between">
         {!isCollapsed && (
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white font-bold text-lg shadow-md">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md"
+              style={{
+                background:
+                  "linear-gradient(to bottom right, #2563eb, #1d4ed8)",
+              }}
+            >
               M
             </div>
             <div>
@@ -260,11 +262,16 @@ const Sidebar = () => {
         })}
       </nav>
 
-      {/* User Info Footer */}
       {!isCollapsed && (
         <div className="p-4 border-t border-gray-100">
           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+            <div
+              className="w-10 h-10 rounded-full  flex items-center justify-center text-white font-bold text-sm shadow-sm"
+              style={{
+                background:
+                  "linear-gradient(to bottom right, #2563eb, #1d4ed8)",
+              }}
+            >
               {user?.name?.charAt(0)?.toUpperCase() || "U"}
             </div>
             <div className="flex-1 min-w-0">

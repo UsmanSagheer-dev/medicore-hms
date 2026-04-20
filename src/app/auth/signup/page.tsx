@@ -27,7 +27,6 @@ function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // ✅ Redirect - justRegistered flag دیکھو
   useEffect(() => {
     if (justRegistered && user) {
       dispatch(clearJustRegistered());
@@ -44,7 +43,6 @@ function Signup() {
   }, [justRegistered, user]);
   
 
-  // ✅ Error handle کرو
   useEffect(() => {
     if (error) {
       toast.error(error);

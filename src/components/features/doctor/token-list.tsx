@@ -53,9 +53,9 @@ const TokenList = ({ doctorId }: TokenListProps) => {
         <div className="text-center py-12 text-gray-500">Loading queue...</div>
       ) : error ? (
         <div className="text-center py-12 text-red-500">{error}</div>
-      ) : tokens.length === 0 ? (
+      ) : tokens.length === 0 || activeTokens.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
-          No patients in the queue for today.
+          No patient list
         </div>
       ) : (
         activeTokens.map((token) => <DoctorTokenCard key={token.id} token={token} />)

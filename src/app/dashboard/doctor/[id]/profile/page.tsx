@@ -12,12 +12,9 @@ import {
   GraduationCap,
   Clock,
   DollarSign,
-  Award,
   Edit2,
   Save,
   X,
-  CheckCircle,
-  AlertCircle,
 } from "lucide-react";
 import Input from "@/components/ui/Input";
 import toast from "react-hot-toast";
@@ -27,9 +24,7 @@ const ProfilePage = () => {
   const user = useAppSelector((state) => state.auth.user);
   const doctorProfile = user?.doctor;
   console.log("Doctor profile data:", doctorProfile);
-  
 
-  // Parse working days from JSON string
   const parseWorkingDays = () => {
     if (!doctorProfile?.working_days) return [];
     try {
@@ -91,8 +86,6 @@ const ProfilePage = () => {
       return;
     }
 
-
-
     setLoading(true);
 
     const dataToSave = {
@@ -118,7 +111,12 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50  to-gray-100">
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{
+        background: "linear-gradient(to bottom right, #f9fafb, #f3f4f6)",
+      }}
+    >
       <Sidebar />
       <div className="flex-1 overflow-y-auto pt-4 pb-14">
         <div className="max-w-7xl mx-auto p-6">
@@ -163,7 +161,6 @@ const ProfilePage = () => {
           {!isEditing ? (
             // VIEW MODE
             <div className="space-y-6">
-              {/* Row 1: Basic & Professional */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
                   <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">

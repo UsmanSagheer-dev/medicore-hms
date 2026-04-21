@@ -93,6 +93,27 @@ export const approveDoctorRequest = createAsyncThunk(
   },
 );
 
+export const updateDoctorProfile = createAsyncThunk(
+  "doctor/updateProfile",
+  async (profileData: DoctorProfile, { rejectWithValue }) => {
+    try {
+      const dataToSend = {
+        ...profileData,
+        consultation_fee: parseInt(String(profileData.consultation_fee), 10),
+        followup_fee: parseInt(String(profileData.followup_fee), 10),
+        working_days: Array.isArray(profileData.working_days)
+          ? JSON.stringify(profileData.working_days)
+          : profileData.working_days,
+      };
+
+      const response = await api.put(`/doctors/${profileData.id}`, dataToSend);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  },
+);
+
 
 
 export const rejectDoctorRequest = createAsyncThunk(
@@ -223,7 +244,23 @@ export const doctorSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
         state.success = false;
+      })
+      .addCase(updateDoctorProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(updateDoctorProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.profile = action.payload.doctor || action.payload.data || action.payload;
+      })
+      .addCase(updateDoctorProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        state.success = false;
       });
+
   },
 });
 

@@ -98,12 +98,14 @@ const DoctorDashboard = () => {
   const doctorName = user?.name || "Doctor";
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex h-full overflow-hidden " >
       {/* Sidebar */}
       <Sidebar />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden p-6">
+      <div className="flex-1 flex flex-col overflow-hidden pt-6 px-4 pb-4 " style={{
+        background: "linear-gradient(to bottom right, #f9fafb, #f3f4f6)",
+      }}>
         <div className="max-w-full mx-auto w-full mb-6 flex items-end justify-end">
           <button
             onClick={handleRefresh}

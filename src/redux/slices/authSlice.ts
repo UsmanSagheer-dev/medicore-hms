@@ -276,7 +276,8 @@ export const authSlice = createSlice({
       // Auto-sync when doctor profile updates
       .addCase(updateDoctorProfile.fulfilled, (state, action) => {
         if (state.user) {
-          const updatedData = action.payload.doctor || action.payload.data || action.payload;
+          const updatedData =
+            action.payload.doctor || action.payload.data || action.payload;
           state.user.doctor = {
             ...state.user.doctor,
             ...updatedData,
@@ -289,6 +290,7 @@ export const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout, clearError, clearJustRegistered } = authSlice.actions;
+export const { setCredentials, logout, clearError, clearJustRegistered } =
+  authSlice.actions;
 
 export default authSlice.reducer;

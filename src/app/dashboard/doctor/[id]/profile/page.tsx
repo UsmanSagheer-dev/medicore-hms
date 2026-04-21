@@ -3,6 +3,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import { useEffect, useState } from "react";
 import { updateDoctorProfile } from "@/redux/slices/doctorSlice";
+import { getMe } from "@/redux/slices/authSlice";
 import {
   User,
   Mail,
@@ -24,6 +25,11 @@ const ProfilePage = () => {
   const user = useAppSelector((state) => state.auth.user);
   const doctorProfile = user?.doctor;
   console.log("Doctor profile data:", doctorProfile);
+
+  // Load complete user data on component mount to ensure all fields are available
+  useEffect(() => {
+    dispatch(getMe());
+  }, [dispatch]);
 
   const parseWorkingDays = () => {
     if (!doctorProfile?.working_days) return [];
@@ -97,9 +103,12 @@ const ProfilePage = () => {
       end_time: formData.end_time,
       working_days: formData.working_days,
     };
+    console.log("Data to save:", dataToSave);
 
     try {
       await dispatch(updateDoctorProfile(dataToSave)).unwrap();
+      // Refresh complete user data to ensure all fields are synced
+      await dispatch(getMe()).unwrap();
       toast.success("Profile updated successfully!");
       setIsEditing(false);
     } catch (error: any) {

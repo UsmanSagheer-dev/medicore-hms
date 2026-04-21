@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { updateDoctorProfile } from "@/redux/slices/doctorSlice";
+import { submitDoctorProfile } from "@/redux/slices/doctorSlice";
 
 export const useDoctorOnboarding = () => {
   const dispatch = useAppDispatch();
@@ -131,7 +131,7 @@ export const useDoctorOnboarding = () => {
       cnic_number: cnicRef.current?.value || "",
     };
 
-    dispatch(updateDoctorProfile(formData));
+    dispatch(submitDoctorProfile(formData));
   };
 
   return {

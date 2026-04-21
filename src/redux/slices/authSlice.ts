@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/lib/axios";
+import { updateDoctorProfile } from "./doctorSlice";
 
 interface AuthState {
   user: any | null;
@@ -271,10 +272,23 @@ export const authSlice = createSlice({
           localStorage.removeItem("user");
           clearCookies();
         }
+      })
+      // Auto-sync when doctor profile updates
+      .addCase(updateDoctorProfile.fulfilled, (state, action) => {
+        if (state.user) {
+          const updatedData = action.payload.doctor || action.payload.data || action.payload;
+          state.user.doctor = {
+            ...state.user.doctor,
+            ...updatedData,
+          };
+          if (typeof window !== "undefined") {
+            localStorage.setItem("user", JSON.stringify(state.user));
+          }
+        }
       });
   },
 });
 
-export const { setCredentials, logout, clearError, clearJustRegistered } =
-  authSlice.actions;
+export const { setCredentials, logout, clearError, clearJustRegistered } = authSlice.actions;
+
 export default authSlice.reducer;

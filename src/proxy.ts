@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function proxy(request: NextRequest) {
-  const token = request.cookies.get("authToken")?.value;
   const userRole = request.cookies.get("userRole")?.value;
   const doctorId = request.cookies.get("doctorId")?.value;
   const pathname = request.nextUrl.pathname;
@@ -10,10 +9,8 @@ export async function proxy(request: NextRequest) {
   const isOnboardingRoute = pathname.startsWith("/onboarding");
   const isPublicRoute = pathname === "/" || isAuthRoute;
 
-  // Check if user is authenticated (has userRole cookie)
   const isAuthenticated = !!userRole;
 
-  // If not authenticated and not on public route, redirect to login
   if (
     !isAuthenticated &&
     !isPublicRoute &&
@@ -24,7 +21,6 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isAuthenticated) {
-    // Auth page پر ہے اور authenticated ہے تو dashboard پر بھیجو
     if (isAuthRoute) {
       let dashboardPath = "/dashboard";
 
@@ -40,7 +36,6 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL(dashboardPath, request.url));
     }
 
-    // Role based protection for dashboard routes
     if (pathname.startsWith("/dashboard/admin")) {
       if (userRole === "admin") {
         return NextResponse.next();

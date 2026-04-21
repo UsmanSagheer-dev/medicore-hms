@@ -15,6 +15,7 @@ import {
   Download,
   Phone,
   MapPin,
+  Cross,
 } from "lucide-react";
 import { useConsultationPage } from "@/hooks/useConsultationPage";
 import Input from "@/components/ui/Input";
@@ -391,19 +392,7 @@ const ConsultationPage = () => {
                     border: "3px solid white",
                   }}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="white"
-                    width="28"
-                    height="28"
-                  >
-                    <path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.35C16.5 22.15 20 17.25 20 12V6l-8-4z" />
-                    <path
-                      d="M11 13H9v-2h2V9h2v2h2v2h-2v2h-2v-2z"
-                      fill="white"
-                    />
-                  </svg>
+                 <Cross/>
                 </div>
                 <div
                   className="absolute right-0 top-1 flex flex-col justify-end px-6"

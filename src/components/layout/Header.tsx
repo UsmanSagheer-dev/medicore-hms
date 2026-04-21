@@ -1,24 +1,19 @@
 "use client";
 import { LogOut, Settings, User } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
-
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Button from "../ui/Button";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { logout, logoutUser } from "@/redux/slices/authSlice";
+import { logoutUser } from "@/redux/slices/authSlice";
 
 const Header = () => {
-  const pathname = usePathname();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Get authenticated user from Redux (already hydrated via InitializeAuth)
   const user = useAppSelector((state) => state.auth.user);
-  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
-  console.log("Authenticated User:", user);
 
   useEffect(() => {
     setIsMounted(true);
@@ -42,20 +37,6 @@ const Header = () => {
     }
     if (role === "receptionist") return "/dashboard/receptionist/profile";
     return "/profile";
-  };
-
-  const getDashboardRoute = () => {
-    const role = user?.role?.toLowerCase();
-    if (role === "admin") return "/dashboard/admin";
-    if (role === "doctor") {
-      const doctorId = user?.doctor?.id || user?.doctorId;
-      if (doctorId) {
-        return `/dashboard/doctor/${doctorId}`;
-      }
-      return "/dashboard/doctor"; // fallback
-    }
-    if (role === "receptionist") return "/dashboard/receptionist";
-    return "/";
   };
 
   const getInitials = (name: string) => {

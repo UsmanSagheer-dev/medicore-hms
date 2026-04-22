@@ -31,14 +31,47 @@ const ProfilePage = () => {
     dispatch(getMe());
   }, [dispatch]);
 
-  const parseWorkingDays = () => {
-    if (!doctorProfile?.working_days) return [];
+  function getWorkingDaysWithTime(
+    working_days?: string,
+  ): { day: string; time?: string }[] {
+    if (!working_days) return [];
     try {
-      return JSON.parse(doctorProfile.working_days);
+      if (typeof working_days === "string") {
+        const parsed = JSON.parse(working_days);
+        if (Array.isArray(parsed)) return parsed.map((day) => ({ day }));
+        if (typeof parsed === "object" && parsed !== null) {
+          return Object.entries(parsed).map(([day, times]: any) => ({
+            day,
+            time:
+              times && times.start && times.end
+                ? `${times.start} - ${times.end}`
+                : undefined,
+          }));
+        }
+        if (working_days.includes(",")) {
+          return working_days
+            .split(",")
+            .map((d: string) => ({ day: d.trim() }));
+        }
+      }
+      if (Array.isArray(working_days))
+        return working_days.map((day) => ({ day }));
+      if (typeof working_days === "object" && working_days !== null) {
+        return Object.entries(working_days).map(([day, times]: any) => ({
+          day,
+          time:
+            times && times.start && times.end
+              ? `${times.start} - ${times.end}`
+              : undefined,
+        }));
+      }
     } catch {
-      return [];
+      if (typeof working_days === "string" && working_days.includes(",")) {
+        return working_days.split(",").map((d: string) => ({ day: d.trim() }));
+      }
     }
-  };
+    return [];
+  }
 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -47,7 +80,7 @@ const ProfilePage = () => {
     followup_fee: doctorProfile?.followup_fee || "",
     start_time: doctorProfile?.start_time || "",
     end_time: doctorProfile?.end_time || "",
-    working_days: parseWorkingDays(),
+    working_days: getWorkingDaysWithTime(),
   });
 
   useEffect(() => {
@@ -77,13 +110,16 @@ const ProfilePage = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleDayChange = (day: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      working_days: prev.working_days.includes(day)
-        ? prev.working_days.filter((d: string) => d !== day)
-        : [...prev.working_days, day],
-    }));
+  const handleDayChange = (day: string, time?: string) => {
+    setFormData((prev) => {
+      const exists = prev.working_days.some((d) => d.day === day);
+      return {
+        ...prev,
+        working_days: exists
+          ? prev.working_days.filter((d) => d.day !== day)
+          : [...prev.working_days, { day, time }],
+      };
+    });
   };
 
   const handleSave = async () => {
@@ -107,7 +143,6 @@ const ProfilePage = () => {
 
     try {
       await dispatch(updateDoctorProfile(dataToSave)).unwrap();
-      // Refresh complete user data to ensure all fields are synced
       await dispatch(getMe()).unwrap();
       toast.success("Profile updated successfully!");
       setIsEditing(false);
@@ -345,12 +380,15 @@ const ProfilePage = () => {
                         Working Days
                       </p>
                       <div className="flex flex-wrap gap-2">
-                        {parseWorkingDays().map((day: string) => (
+                        {getWorkingDaysWithTime(
+                          doctorProfile?.working_days,
+                        ).map(({ day, time }) => (
                           <span
                             key={day}
                             className="px-3 py-1 bg-blue-600 text-white rounded-full text-sm font-medium"
                           >
                             {day}
+                            {time ? `: ${time}` : ""}
                           </span>
                         ))}
                       </div>
@@ -439,7 +477,9 @@ const ProfilePage = () => {
                         >
                           <Input
                             type="checkbox"
-                            checked={formData.working_days.includes(day)}
+                            checked={formData.working_days.some(
+                              (d) => d.day === day,
+                            )}
                             onChange={() => handleDayChange(day)}
                             className="w-4 h-4 text-blue-600 rounded cursor-pointer"
                           />

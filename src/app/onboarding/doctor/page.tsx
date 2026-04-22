@@ -40,13 +40,16 @@ export default function DoctorOnboarding() {
     handleNext,
     handleBack,
     toggleDay,
-    workingDays,
+    updateDayTime,
+    workingHours,
     refs,
   } = useDoctorOnboarding();
 
   useEffect(() => {
     dispatch(resetDoctorState());
   }, [dispatch]);
+
+ 
 
   useEffect(() => {
     if (formSubmittedRef.current && success) {
@@ -86,7 +89,7 @@ export default function DoctorOnboarding() {
         </div>
       </div>
 
-      <div className="min-h-full">
+      <div className="">
         {/* Step 1: Basic Information */}
         <div className={`space-y-8 animate-in ${stepClass(1)}`}>
           <h2 className="text-2xl font-bold text-white flex items-center gap-3">
@@ -371,7 +374,7 @@ export default function DoctorOnboarding() {
           <div className="space-y-8">
             <div className="space-y-4">
               <label className="text-sm font-medium text-white/70 ml-1 italic">
-                Select Working Days
+                Select Working Days (Click to add/remove)
               </label>
               <div className="flex flex-wrap gap-4">
                 {days.map((day) => (
@@ -380,7 +383,7 @@ export default function DoctorOnboarding() {
                     type="button"
                     onClick={() => toggleDay(day)}
                     className={`px-6 py-3 rounded-2xl font-semibold transition-all duration-300 ${
-                      workingDays.includes(day)
+                      workingHours[day]
                         ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
                         : "bg-white/5 text-white/60 hover:bg-white/10"
                     }`}
@@ -390,45 +393,72 @@ export default function DoctorOnboarding() {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/70 ml-1">
-                  Start Time
-                </label>
-                <Input
-                  ref={refs.startTimeRef}
-                  type="time"
-                  defaultValue="09:00"
-                  className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
-                />
+
+            {/* Time inputs for each selected day */}
+            <div className="space-y-6">
+              <label className="text-sm font-medium text-white/70 ml-1">
+                Set Hours for Each Day
+              </label>
+              <div className="grid grid-cols-1 gap-6">
+                {days.map((day) =>
+                  workingHours[day] ? (
+                    <div
+                      key={day}
+                      className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4"
+                    >
+                      <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-indigo-500" />
+                        {day}
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-white/70 ml-1">
+                            Start Time
+                          </label>
+                          <input
+                            type="time"
+                            value={workingHours[day]?.start || "09:00"}
+                            onChange={(e) =>
+                              updateDayTime(day, "start", e.target.value)
+                            }
+                            className="w-full bg-white/5 border border-white/10 text-white h-12 rounded-xl px-4 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-white/70 ml-1">
+                            End Time
+                          </label>
+                          <input
+                            type="time"
+                            value={workingHours[day]?.end || "17:00"}
+                            onChange={(e) =>
+                              updateDayTime(day, "end", e.target.value)
+                            }
+                            className="w-full bg-white/5 border border-white/10 text-white h-12 rounded-xl px-4 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : null
+                )}
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/70 ml-1">
-                  End Time
-                </label>
-                <Input
-                  ref={refs.endTimeRef}
-                  type="time"
-                  defaultValue="17:00"
-                  className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/70 ml-1">
-                  Slot Duration (Minutes)
-                </label>
-                <Select
-                  ref={refs.slotDurationRef}
-                  defaultValue="15"
-                  options={[
-                    { label: "10 Mins", value: "10" },
-                    { label: "15 Mins", value: "15" },
-                    { label: "20 Mins", value: "20" },
-                    { label: "30 Mins", value: "30" },
-                  ]}
-                  className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
-                />
-              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-white/70 ml-1">
+                Slot Duration (Minutes)
+              </label>
+              <Select
+                ref={refs.slotDurationRef}
+                defaultValue="15"
+                options={[
+                  { label: "10 Mins", value: "10" },
+                  { label: "15 Mins", value: "15" },
+                  { label: "20 Mins", value: "20" },
+                  { label: "30 Mins", value: "30" },
+                ]}
+                className="bg-white/5 border-white/10 text-white h-12 rounded-xl max-w-xs"
+              />
             </div>
           </div>
         </div>

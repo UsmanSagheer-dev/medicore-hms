@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Users,
   Calendar,
+  Clock,
   FileText,
   Settings,
   UserCircle,
@@ -57,6 +58,12 @@ const Sidebar = () => {
         label: "Appointments",
         icon: <Calendar className="w-5 h-5" />,
         href: `/dashboard/doctor/${doctorId}/appointments`,
+      },
+      {
+        id: "schedule",
+        label: "Schedule",
+        icon: <Clock className="w-5 h-5" />,
+        href: `/dashboard/doctor/${doctorId}/schedule`,
       },
       {
         id: "consultations",

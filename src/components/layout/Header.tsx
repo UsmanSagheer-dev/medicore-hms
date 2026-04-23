@@ -60,8 +60,8 @@ const Header = () => {
   const userInfo = useMemo(
     () => ({
       name: user?.name || "User",
-      role: formatRole(user?.role),
-      initials: getInitials(user?.name),
+      role: formatRole(user?.role || ""),
+      initials: getInitials(user?.name || ""),
     }),
     [user?.name, user?.role],
   );

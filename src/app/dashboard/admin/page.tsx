@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { pendingDoctorRequests, activeDoctor } from "@/redux/slices/doctorSlice";
+import {
+  pendingDoctorRequests,
+  activeDoctor,
+} from "@/redux/slices/doctorSlice";
 import { RootState, AppDispatch } from "@/redux/store";
 import {
   Users,
@@ -65,7 +68,6 @@ const AdminDashboard = () => {
     patientVisits,
   } = useSelector((state: RootState) => state.receptionist);
 
-
   useEffect(() => {
     dispatch(pendingDoctorRequests());
     dispatch(activeDoctor() as any);
@@ -109,7 +111,7 @@ const AdminDashboard = () => {
     },
     {
       label: "New Requests",
-      value: (requests.length + receptionistRequests.length) || "0",
+      value: requests.length + receptionistRequests.length || "0",
       icon: UserPlus,
       color: "text-amber-600",
       bg: "bg-amber-50",
@@ -123,26 +125,27 @@ const AdminDashboard = () => {
     },
   ];
 
-  const staffList = receptionists && receptionists.length > 0 
-    ? receptionists 
-    : [
-        {
-          id: 1,
-          name: "Dr. Usman Sagheer",
-          role: "Doctor",
-          specialty: "Cardiology",
-          status: "Active",
-          email: "usman@medicore.com",
-        },
-        {
-          id: 3,
-          name: "Dr. Sarah Khan",
-          role: "Doctor",
-          specialty: "Pediatrics",
-          status: "Inactive",
-          email: "sarah@medicore.com",
-        },
-      ];
+  const staffList =
+    receptionists && receptionists.length > 0
+      ? receptionists
+      : [
+          {
+            id: 1,
+            name: "Dr. Usman Sagheer",
+            role: "Doctor",
+            specialty: "Cardiology",
+            status: "Active",
+            email: "usman@medicore.com",
+          },
+          {
+            id: 3,
+            name: "Dr. Sarah Khan",
+            role: "Doctor",
+            specialty: "Pediatrics",
+            status: "Inactive",
+            email: "sarah@medicore.com",
+          },
+        ];
 
   const handleApprove = async (id: string) => {
     try {
@@ -525,11 +528,12 @@ const AdminDashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {(activeTab === "staff" 
-                  ? receptionists 
-                  : activeTab === "doctors" 
-                    ? activeDoctors 
-                    : staffList)
+                {(activeTab === "staff"
+                  ? receptionists
+                  : activeTab === "doctors"
+                    ? activeDoctors
+                    : staffList
+                )
                   .filter((user: any) => {
                     if (activeTab === "staff") return true;
                     if (activeTab === "doctors") return true;
@@ -612,7 +616,8 @@ const AdminDashboard = () => {
                           <td className="px-6 py-4">
                             <span
                               className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold ${
-                                user.status === "Active" || activeTab === "staff"
+                                user.status === "Active" ||
+                                activeTab === "staff"
                                   ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                                   : "bg-gray-100 text-gray-600 border border-gray-200"
                               }`}
@@ -788,16 +793,42 @@ const AdminDashboard = () => {
                             />
                           </div>
                           <DetailItem
-                            label="Working Days"
-                            value={
-                              Array.isArray(selectedDoctor.working_days)
-                                ? selectedDoctor.working_days.join(", ")
-                                : selectedDoctor.working_days
-                            }
-                          />
-                          <DetailItem
-                            label="Shift Hours"
-                            value={`${selectedDoctor.start_time} - ${selectedDoctor.end_time}`}
+                            label="Working Schedule"
+                            value={(() => {
+                              try {
+                                let workingDaysData =
+                                  selectedDoctor.working_days;
+
+                                // Parse if it's a JSON string
+                                if (typeof workingDaysData === "string") {
+                                  workingDaysData = JSON.parse(workingDaysData);
+                                }
+
+                                // Handle object format (new per-day schedule)
+                                if (
+                                  typeof workingDaysData === "object" &&
+                                  !Array.isArray(workingDaysData)
+                                ) {
+                                  return (
+                                    Object.entries(workingDaysData)
+                                      .map(
+                                        ([day, times]: any) =>
+                                          `${day}: ${times?.start || "N/A"}-${times?.end || "N/A"}`,
+                                      )
+                                      .join(" | ") || "N/A"
+                                  );
+                                }
+
+                                // Handle array format (legacy)
+                                if (Array.isArray(workingDaysData)) {
+                                  return workingDaysData.join(", ");
+                                }
+
+                                return "N/A";
+                              } catch (e) {
+                                return selectedDoctor.working_days || "N/A";
+                              }
+                            })()}
                             icon={<Clock size={14} />}
                           />
                         </div>
@@ -1040,7 +1071,7 @@ const AdminDashboard = () => {
                 {/* Modal Footer */}
                 <div className="col-span-full mt-6 flex items-center gap-3 pt-6 border-t border-gray-100">
                   <Button
-                  title="Cancle"
+                    title="Cancle"
                     type="button"
                     onClick={() => {
                       setIsEditModalOpen(false);
@@ -1049,7 +1080,7 @@ const AdminDashboard = () => {
                     }}
                     className="flex-1 px-6 py-3 text-gray-600 font-bold hover:bg-gray-100 rounded-2xl transition-all active:scale-95"
                   />
-                  
+
                   <button
                     type="submit"
                     disabled={loading}

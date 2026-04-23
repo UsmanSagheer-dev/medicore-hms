@@ -25,7 +25,7 @@ interface DoctorProfile {
   consultation_fee: string;
   followup_fee: string;
   followup_validity_days: string;
-  working_days: string[];
+  working_days: string | string[] | { [key: string]: { start: string; end: string } };
   start_time: string;
   end_time: string;
   slot_duration_minutes: string;

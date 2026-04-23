@@ -5,6 +5,14 @@ import { useEffect, useState } from "react";
 import { updateDoctorProfile } from "@/redux/slices/doctorSlice";
 import { getMe } from "@/redux/slices/authSlice";
 import {
+  DAY_LABEL_BY_KEY,
+  DAY_OPTIONS,
+  DayKey,
+  WorkingDaysValue,
+  normalizeDayKey,
+  parseWorkingDaysEntries,
+} from "@/lib/daySchedule";
+import {
   User,
   Mail,
   Phone,
@@ -24,21 +32,16 @@ const ProfilePage = () => {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const doctorProfile = user?.doctor;
-  console.log("Doctor profile data:", doctorProfile);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   // Load complete user data on component mount to ensure all fields are available
   useEffect(() => {
     dispatch(getMe());
   }, [dispatch]);
-
-  const parseWorkingDays = () => {
-    if (!doctorProfile?.working_days) return [];
-    try {
-      return JSON.parse(doctorProfile.working_days);
-    } catch {
-      return [];
-    }
-  };
 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -47,7 +50,7 @@ const ProfilePage = () => {
     followup_fee: doctorProfile?.followup_fee || "",
     start_time: doctorProfile?.start_time || "",
     end_time: doctorProfile?.end_time || "",
-    working_days: parseWorkingDays(),
+    working_days: parseWorkingDaysEntries(doctorProfile?.working_days as WorkingDaysValue),
   });
 
   useEffect(() => {
@@ -57,18 +60,10 @@ const ProfilePage = () => {
         followup_fee: doctorProfile.followup_fee?.toString() || "",
         start_time: doctorProfile.start_time || "",
         end_time: doctorProfile.end_time || "",
-        working_days: doctorProfile.working_days
-          ? typeof doctorProfile.working_days === "string"
-            ? JSON.parse(doctorProfile.working_days)
-            : Array.isArray(doctorProfile.working_days)
-              ? doctorProfile.working_days
-              : []
-          : [],
+        working_days: parseWorkingDaysEntries(doctorProfile.working_days as WorkingDaysValue),
       });
     }
   }, [isEditing, doctorProfile]);
-
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -77,13 +72,62 @@ const ProfilePage = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleDayChange = (day: string) => {
+  const handleDayChange = (day: DayKey, time?: string) => {
+    setFormData((prev) => {
+      const exists = prev.working_days.some((d) => d.day === day);
+      return {
+        ...prev,
+        working_days: exists
+          ? prev.working_days.filter((d) => d.day !== day)
+          : [
+              ...prev.working_days,
+              {
+                day,
+                time:
+                  time ||
+                  `${prev.start_time || "09:00"} - ${prev.end_time || "17:00"}`,
+              },
+            ],
+      };
+    });
+  };
+
+  const handleDayTimeRangeChange = (
+    day: DayKey,
+    part: "start" | "end",
+    value: string,
+  ) => {
     setFormData((prev) => ({
       ...prev,
-      working_days: prev.working_days.includes(day)
-        ? prev.working_days.filter((d: string) => d !== day)
-        : [...prev.working_days, day],
+      working_days: prev.working_days.map((d) =>
+        d.day === day
+          ? {
+              ...d,
+              time: (() => {
+                const [
+                  currentStart = prev.start_time || "09:00",
+                  currentEnd = prev.end_time || "17:00",
+                ] = (d.time || "").split("-").map((t) => t.trim());
+
+                const nextStart = part === "start" ? value : currentStart;
+                const nextEnd = part === "end" ? value : currentEnd;
+
+                return `${nextStart} - ${nextEnd}`;
+              })(),
+            }
+          : d,
+      ),
     }));
+  };
+
+  const getSelectedDayTimeRange = (day: DayKey) => {
+    const selected = formData.working_days.find((d) => d.day === day)?.time;
+    const [
+      start = formData.start_time || "09:00",
+      end = formData.end_time || "17:00",
+    ] = (selected || "").split("-").map((t) => t.trim());
+
+    return { start, end };
   };
 
   const handleSave = async () => {
@@ -94,6 +138,31 @@ const ProfilePage = () => {
 
     setLoading(true);
 
+    const workingDaysPayload = formData.working_days.reduce(
+      (acc, entry) => {
+        const rawTime = entry.time?.trim();
+        let start = formData.start_time;
+        let end = formData.end_time;
+
+        if (rawTime && rawTime.includes("-")) {
+          const [customStart, customEnd] = rawTime
+            .split("-")
+            .map((t) => t.trim());
+          if (customStart) start = customStart;
+          if (customEnd) end = customEnd;
+        }
+
+        const normalizedDay = normalizeDayKey(entry.day);
+        if (!normalizedDay) {
+          return acc;
+        }
+
+        acc[normalizedDay] = { start, end };
+        return acc;
+      },
+      {} as Record<string, { start: string; end: string }>,
+    );
+
     const dataToSave = {
       ...doctorProfile,
       id: doctorProfile.id,
@@ -101,13 +170,12 @@ const ProfilePage = () => {
       followup_fee: parseInt(formData.followup_fee, 10),
       start_time: formData.start_time,
       end_time: formData.end_time,
-      working_days: formData.working_days,
+      working_days: workingDaysPayload,
     };
     console.log("Data to save:", dataToSave);
 
     try {
       await dispatch(updateDoctorProfile(dataToSave)).unwrap();
-      // Refresh complete user data to ensure all fields are synced
       await dispatch(getMe()).unwrap();
       toast.success("Profile updated successfully!");
       setIsEditing(false);
@@ -118,6 +186,26 @@ const ProfilePage = () => {
       setLoading(false);
     }
   };
+
+  if (!isHydrated) {
+    return (
+      <div
+        className="flex h-screen overflow-hidden"
+        style={{
+          background: "linear-gradient(to bottom right, #f9fafb, #f3f4f6)",
+        }}
+      >
+        <Sidebar />
+        <div className="flex-1 overflow-y-auto pt-4 pb-14">
+          <div className="max-w-7xl mx-auto p-6">
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <p className="text-gray-500">Loading profile...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -345,12 +433,15 @@ const ProfilePage = () => {
                         Working Days
                       </p>
                       <div className="flex flex-wrap gap-2">
-                        {parseWorkingDays().map((day: string) => (
+                        {parseWorkingDaysEntries(
+                          doctorProfile?.working_days as WorkingDaysValue,
+                        ).map(({ day, time }) => (
                           <span
                             key={day}
                             className="px-3 py-1 bg-blue-600 text-white rounded-full text-sm font-medium"
                           >
-                            {day}
+                            {DAY_LABEL_BY_KEY[day]}
+                            {time ? `: ${time}` : ""}
                           </span>
                         ))}
                       </div>
@@ -431,21 +522,58 @@ const ProfilePage = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Working Days
                     </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {days.map((day) => (
-                        <label
-                          key={day}
-                          className="flex items-center gap-2 cursor-pointer p-2 bg-gray-50 rounded hover:bg-blue-50 transition"
-                        >
-                          <Input
-                            type="checkbox"
-                            checked={formData.working_days.includes(day)}
-                            onChange={() => handleDayChange(day)}
-                            className="w-4 h-4 text-blue-600 rounded cursor-pointer"
-                          />
-                          <span className="text-gray-700 text-sm">{day}</span>
-                        </label>
-                      ))}
+                    <div className="space-y-2">
+                      {DAY_OPTIONS.map((day) => {
+                        const isSelected = formData.working_days.some(
+                          (d) => d.day === day.key,
+                        );
+                        const selectedTime = getSelectedDayTimeRange(day.key);
+
+                        return (
+                          <div
+                            key={day.key}
+                            className="grid grid-cols-1 md:grid-cols-[auto_120px_120px] gap-3 items-center p-2 bg-gray-50 rounded hover:bg-blue-50 transition"
+                          >
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <Input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleDayChange(day.key)}
+                                className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                              />
+                              <span className="text-gray-700 text-sm min-w-10">
+                                {day.label}
+                              </span>
+                            </label>
+                            <Input
+                              type="time"
+                              value={selectedTime.start}
+                              onChange={(e) =>
+                                handleDayTimeRangeChange(
+                                  day.key,
+                                  "start",
+                                  e.target.value,
+                                )
+                              }
+                              disabled={!isSelected}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                            />
+                            <Input
+                              type="time"
+                              value={selectedTime.end}
+                              onChange={(e) =>
+                                handleDayTimeRangeChange(
+                                  day.key,
+                                  "end",
+                                  e.target.value,
+                                )
+                              }
+                              disabled={!isSelected}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

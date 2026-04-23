@@ -27,6 +27,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { submitDoctorProfile, resetDoctorState } from "@/redux/slices/doctorSlice";
 import { useEffect, useRef } from "react";
 import { useDoctorOnboarding } from "@/hooks/useDoctorOnboarding";
+import { DAY_OPTIONS } from "@/lib/daySchedule";
 
 export default function DoctorOnboarding() {
   const router = useRouter();
@@ -40,13 +41,16 @@ export default function DoctorOnboarding() {
     handleNext,
     handleBack,
     toggleDay,
-    workingDays,
+    updateDayTime,
+    workingHours,
     refs,
   } = useDoctorOnboarding();
 
   useEffect(() => {
     dispatch(resetDoctorState());
   }, [dispatch]);
+
+ 
 
   useEffect(() => {
     if (formSubmittedRef.current && success) {
@@ -60,8 +64,6 @@ export default function DoctorOnboarding() {
       toast.error(errorMsg);
     }
   }, [success, error, router, dispatch]);
-
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   const stepClass = (s: number) => (step === s ? "block" : "hidden");
 
@@ -86,7 +88,7 @@ export default function DoctorOnboarding() {
         </div>
       </div>
 
-      <div className="min-h-full">
+      <div className="">
         {/* Step 1: Basic Information */}
         <div className={`space-y-8 animate-in ${stepClass(1)}`}>
           <h2 className="text-2xl font-bold text-white flex items-center gap-3">
@@ -371,64 +373,91 @@ export default function DoctorOnboarding() {
           <div className="space-y-8">
             <div className="space-y-4">
               <label className="text-sm font-medium text-white/70 ml-1 italic">
-                Select Working Days
+                Select Working Days (Click to add/remove)
               </label>
               <div className="flex flex-wrap gap-4">
-                {days.map((day) => (
+                {DAY_OPTIONS.map((day) => (
                   <button
-                    key={day}
+                    key={day.key}
                     type="button"
-                    onClick={() => toggleDay(day)}
+                    onClick={() => toggleDay(day.key)}
                     className={`px-6 py-3 rounded-2xl font-semibold transition-all duration-300 ${
-                      workingDays.includes(day)
+                      workingHours[day.key]
                         ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
                         : "bg-white/5 text-white/60 hover:bg-white/10"
                     }`}
                   >
-                    {day}
+                    {day.label}
                   </button>
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/70 ml-1">
-                  Start Time
-                </label>
-                <Input
-                  ref={refs.startTimeRef}
-                  type="time"
-                  defaultValue="09:00"
-                  className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
-                />
+
+            {/* Time inputs for each selected day */}
+            <div className="space-y-6">
+              <label className="text-sm font-medium text-white/70 ml-1">
+                Set Hours for Each Day
+              </label>
+              <div className="grid grid-cols-1 gap-6">
+                {DAY_OPTIONS.map((day) =>
+                  workingHours[day.key] ? (
+                    <div
+                      key={day.key}
+                      className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4"
+                    >
+                      <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-indigo-500" />
+                        {day.label}
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-white/70 ml-1">
+                            Start Time
+                          </label>
+                          <input
+                            type="time"
+                            value={workingHours[day.key]?.start || "09:00"}
+                            onChange={(e) =>
+                              updateDayTime(day.key, "start", e.target.value)
+                            }
+                            className="w-full bg-white/5 border border-white/10 text-white h-12 rounded-xl px-4 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-white/70 ml-1">
+                            End Time
+                          </label>
+                          <input
+                            type="time"
+                            value={workingHours[day.key]?.end || "17:00"}
+                            onChange={(e) =>
+                              updateDayTime(day.key, "end", e.target.value)
+                            }
+                            className="w-full bg-white/5 border border-white/10 text-white h-12 rounded-xl px-4 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : null
+                )}
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/70 ml-1">
-                  End Time
-                </label>
-                <Input
-                  ref={refs.endTimeRef}
-                  type="time"
-                  defaultValue="17:00"
-                  className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-white/70 ml-1">
-                  Slot Duration (Minutes)
-                </label>
-                <Select
-                  ref={refs.slotDurationRef}
-                  defaultValue="15"
-                  options={[
-                    { label: "10 Mins", value: "10" },
-                    { label: "15 Mins", value: "15" },
-                    { label: "20 Mins", value: "20" },
-                    { label: "30 Mins", value: "30" },
-                  ]}
-                  className="bg-white/5 border-white/10 text-white h-12 rounded-xl"
-                />
-              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-white/70 ml-1">
+                Slot Duration (Minutes)
+              </label>
+              <Select
+                ref={refs.slotDurationRef}
+                defaultValue="15"
+                options={[
+                  { label: "10 Mins", value: "10" },
+                  { label: "15 Mins", value: "15" },
+                  { label: "20 Mins", value: "20" },
+                  { label: "30 Mins", value: "30" },
+                ]}
+                className="bg-white/5 border-white/10 text-white h-12 rounded-xl max-w-xs"
+              />
             </div>
           </div>
         </div>

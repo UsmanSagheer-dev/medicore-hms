@@ -1,11 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppSelector } from "@/redux/hooks";
 import {
   LayoutDashboard,
   Users,
   Calendar,
+  Clock,
   FileText,
   Settings,
   UserCircle,
@@ -29,15 +30,53 @@ interface SidebarConfig {
   [key: string]: SidebarItem[];
 }
 
+function SidebarUserProfile({
+  displayName,
+  userRole,
+}: {
+  displayName: string;
+  userRole: string;
+}) {
+  const initial = displayName.charAt(0).toUpperCase() || "U";
+
+  return (
+    <div className="p-4 border-t border-gray-100">
+      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+        <div
+          className="w-10 h-10 rounded-full  flex items-center justify-center text-white font-bold text-sm shadow-sm"
+          style={{
+            background: "linear-gradient(to bottom right, #2563eb, #1d4ed8)",
+          }}
+        >
+          {initial}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 truncate">
+            {displayName}
+          </p>
+          <p className="text-xs text-gray-500 capitalize">{userRole}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const Sidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAppSelector((state) => state.auth);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-  const userRole = user?.role?.toLowerCase() || "doctor";
-  const doctorId = user?.doctor?.id || user?.doctorId;
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
+  // Keep first SSR and first CSR render deterministic to avoid hydration mismatch.
+  const hydratedUser = isMounted ? user : null;
+  const userRole = hydratedUser?.role?.toLowerCase() || "doctor";
+  const doctorId = hydratedUser?.doctor?.id || hydratedUser?.doctorId;
+  const displayName = hydratedUser?.name || "User";
   const sidebarConfig: SidebarConfig = {
     doctor: [
       {
@@ -57,6 +96,12 @@ const Sidebar = () => {
         label: "Appointments",
         icon: <Calendar className="w-5 h-5" />,
         href: `/dashboard/doctor/${doctorId}/appointments`,
+      },
+      {
+        id: "schedule",
+        label: "Schedule",
+        icon: <Clock className="w-5 h-5" />,
+        href: `/dashboard/doctor/${doctorId}/schedule`,
       },
       {
         id: "consultations",
@@ -166,6 +211,7 @@ const Sidebar = () => {
       },
     ],
   };
+  
 
   const currentItems = sidebarConfig[userRole] || sidebarConfig.doctor;
 
@@ -263,26 +309,9 @@ const Sidebar = () => {
       </nav>
 
       {!isCollapsed && (
-        <div className="p-4 border-t border-gray-100">
-          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-            <div
-              className="w-10 h-10 rounded-full  flex items-center justify-center text-white font-bold text-sm shadow-sm"
-              style={{
-                background:
-                  "linear-gradient(to bottom right, #2563eb, #1d4ed8)",
-              }}
-            >
-              {user?.name?.charAt(0)?.toUpperCase() || "U"}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">
-                {user?.name || "User"}
-              </p>
-              <p className="text-xs text-gray-500 capitalize">{userRole}</p>
-            </div>
-          </div>
-        </div>
+        <SidebarUserProfile displayName={displayName} userRole={userRole} />
       )}
+
     </aside>
   );
 };

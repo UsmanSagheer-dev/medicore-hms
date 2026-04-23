@@ -1,94 +1,76 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import api from "@/lib/axios";
-import { WeeklySchedule, ScheduleException, ScheduleState } from "@/types/schedule";
+import { DayKey, parseWorkingDaysMap } from "@/lib/daySchedule";
+
+export type DoctorDaySchedule = Partial<
+  Record<DayKey, { start: string; end: string }>
+>;
+
+interface ScheduleState {
+  daySchedule: DoctorDaySchedule | null;
+  loading: boolean;
+  error: string | null;
+  success: boolean;
+}
 
 const initialState: ScheduleState = {
-  weeklySchedule: null,
-  exceptions: [],
+  daySchedule: null,
   loading: false,
   error: null,
   success: false,
 };
 
-export const getWeeklySchedule = createAsyncThunk(
-  "schedule/getWeekly",
-  async (doctorId: string, { rejectWithValue }) => {
-    try {
-      const response = await api.get(`/schedule/doctor/${doctorId}/weekly`);
-      return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error || error.message);
+function toDayScheduleMap(value: unknown): DoctorDaySchedule {
+  return parseWorkingDaysMap(value) as DoctorDaySchedule;
+}
+
+function extractScheduleFromResponse(responseData: unknown): DoctorDaySchedule | null {
+  if (!responseData || typeof responseData !== "object") {
+    return null;
+  }
+
+  const payload = responseData as Record<string, unknown>;
+
+  if (payload.doctor && typeof payload.doctor === "object") {
+    const doctor = payload.doctor as Record<string, unknown>;
+    if (doctor.working_days) {
+      return toDayScheduleMap(doctor.working_days);
     }
   }
-);
 
-export const updateWeeklySchedule = createAsyncThunk(
-  "schedule/updateWeekly",
-  async (
-    { doctorId, scheduleData }: { doctorId: string; scheduleData: WeeklySchedule },
-    { rejectWithValue }
-  ) => {
-    try {
-      const response = await api.put(
-        `/schedule/doctor/${doctorId}/weekly`,
-        scheduleData
-      );
-      return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error || error.message);
+  if (payload.data && typeof payload.data === "object") {
+    const data = payload.data as Record<string, unknown>;
+    if (data.working_days) {
+      return toDayScheduleMap(data.working_days);
     }
   }
-);
 
-export const getScheduleExceptions = createAsyncThunk(
-  "schedule/getExceptions",
-  async (doctorId: string, { rejectWithValue }) => {
-    try {
-      const response = await api.get(`/schedule/doctor/${doctorId}/exceptions`);
-      return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error || error.message);
-    }
+  if (payload.working_days) {
+    return toDayScheduleMap(payload.working_days);
   }
-);
 
-export const addScheduleException = createAsyncThunk(
-  "schedule/addException",
+  return null;
+}
+
+export const updateDoctorDaySchedule = createAsyncThunk(
+  "schedule/updateDoctorDaySchedule",
   async (
     {
       doctorId,
-      exceptionData,
-    }: {
-      doctorId: string;
-      exceptionData: Omit<ScheduleException, "id" | "createdAt">;
-    },
-    { rejectWithValue }
+      scheduleData,
+    }: { doctorId: string; scheduleData: DoctorDaySchedule },
+    { rejectWithValue },
   ) => {
     try {
-      const response = await api.post(
-        `/schedule/doctor/${doctorId}/exceptions`,
-        exceptionData
-      );
-      return response.data;
+      const response = await api.put(`/doctors/${doctorId}/schedule`, scheduleData);
+      return {
+        responseData: response.data,
+        scheduleData,
+      };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
     }
-  }
-);
-
-export const deleteScheduleException = createAsyncThunk(
-  "schedule/deleteException",
-  async (
-    { doctorId, exceptionId }: { doctorId: string; exceptionId: string },
-    { rejectWithValue }
-  ) => {
-    try {
-      await api.delete(`/schedule/doctor/${doctorId}/exceptions/${exceptionId}`);
-      return exceptionId;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.error || error.message);
-    }
-  }
+  },
 );
 
 export const scheduleSlice = createSlice({
@@ -100,80 +82,47 @@ export const scheduleSlice = createSlice({
       state.error = null;
       state.success = false;
     },
+    clearSchedule: (state) => {
+      state.daySchedule = null;
+      state.success = false;
+      state.error = null;
+    },
+    setScheduleFromWorkingDays: (state, action: PayloadAction<unknown>) => {
+      state.daySchedule = toDayScheduleMap(action.payload);
+      state.error = null;
+    },
+    setDaySchedule: (state, action: PayloadAction<DoctorDaySchedule>) => {
+      state.daySchedule = action.payload;
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getWeeklySchedule.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(getWeeklySchedule.fulfilled, (state, action) => {
-        state.loading = false;
-        state.weeklySchedule = action.payload;
-      })
-      .addCase(getWeeklySchedule.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-
-      .addCase(updateWeeklySchedule.pending, (state) => {
+      .addCase(updateDoctorDaySchedule.pending, (state) => {
         state.loading = true;
         state.error = null;
         state.success = false;
       })
-      .addCase(updateWeeklySchedule.fulfilled, (state, action) => {
+      .addCase(updateDoctorDaySchedule.fulfilled, (state, action) => {
         state.loading = false;
-        state.weeklySchedule = action.payload;
         state.success = true;
+
+        const extracted = extractScheduleFromResponse(action.payload.responseData);
+        state.daySchedule = extracted || action.payload.scheduleData;
       })
-      .addCase(updateWeeklySchedule.rejected, (state, action) => {
+      .addCase(updateDoctorDaySchedule.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
         state.success = false;
-      })
-
-      .addCase(getScheduleExceptions.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(getScheduleExceptions.fulfilled, (state, action) => {
-        state.loading = false;
-        state.exceptions = action.payload;
-      })
-      .addCase(getScheduleExceptions.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-
-      .addCase(addScheduleException.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(addScheduleException.fulfilled, (state, action) => {
-        state.loading = false;
-        state.exceptions.push(action.payload);
-        state.success = true;
-      })
-      .addCase(addScheduleException.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-
-      .addCase(deleteScheduleException.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(deleteScheduleException.fulfilled, (state, action) => {
-        state.loading = false;
-        state.exceptions = state.exceptions.filter((e) => e.id !== action.payload);
-        state.success = true;
-      })
-      .addCase(deleteScheduleException.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
       });
   },
 });
 
-export const { resetScheduleState } = scheduleSlice.actions;
+export const {
+  resetScheduleState,
+  clearSchedule,
+  setScheduleFromWorkingDays,
+  setDaySchedule,
+} = scheduleSlice.actions;
+
 export default scheduleSlice.reducer;

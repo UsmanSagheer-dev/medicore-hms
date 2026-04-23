@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { submitDoctorProfile } from "@/redux/slices/doctorSlice";
+import { DayKey, normalizeDayKey } from "@/lib/daySchedule";
 
 export const useDoctorOnboarding = () => {
   const dispatch = useAppDispatch();
@@ -35,9 +36,9 @@ export const useDoctorOnboarding = () => {
   const followupFeeRef = useRef<HTMLInputElement>(null);
   const followupValidityRef = useRef<HTMLSelectElement>(null);
 
-  const [workingHours, setWorkingHours] = useState<{
-    [key: string]: { start: string; end: string };
-  }>({});
+  const [workingHours, setWorkingHours] = useState<
+    Partial<Record<DayKey, { start: string; end: string }>>
+  >({});
   const slotDurationRef = useRef<HTMLSelectElement>(null);
   const cnicRef = useRef<HTMLInputElement>(null);
 
@@ -101,12 +102,17 @@ export const useDoctorOnboarding = () => {
   };
 
   const toggleDay = (day: string) => {
+    const normalizedDay = normalizeDayKey(day);
+    if (!normalizedDay) {
+      return;
+    }
+
     setWorkingHours((prev) => {
       const updated = { ...prev };
-      if (updated[day]) {
-        delete updated[day];
+      if (updated[normalizedDay]) {
+        delete updated[normalizedDay];
       } else {
-        updated[day] = { start: "09:00", end: "17:00" };
+        updated[normalizedDay] = { start: "09:00", end: "17:00" };
       }
       return updated;
     });
@@ -117,10 +123,15 @@ export const useDoctorOnboarding = () => {
     timeType: "start" | "end",
     value: string,
   ) => {
+    const normalizedDay = normalizeDayKey(day);
+    if (!normalizedDay) {
+      return;
+    }
+
     setWorkingHours((prev) => ({
       ...prev,
-      [day]: {
-        ...prev[day],
+      [normalizedDay]: {
+        ...prev[normalizedDay],
         [timeType]: value,
       },
     }));

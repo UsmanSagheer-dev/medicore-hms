@@ -27,6 +27,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { submitDoctorProfile, resetDoctorState } from "@/redux/slices/doctorSlice";
 import { useEffect, useRef } from "react";
 import { useDoctorOnboarding } from "@/hooks/useDoctorOnboarding";
+import { DAY_OPTIONS } from "@/lib/daySchedule";
 
 export default function DoctorOnboarding() {
   const router = useRouter();
@@ -63,8 +64,6 @@ export default function DoctorOnboarding() {
       toast.error(errorMsg);
     }
   }, [success, error, router, dispatch]);
-
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   const stepClass = (s: number) => (step === s ? "block" : "hidden");
 
@@ -377,18 +376,18 @@ export default function DoctorOnboarding() {
                 Select Working Days (Click to add/remove)
               </label>
               <div className="flex flex-wrap gap-4">
-                {days.map((day) => (
+                {DAY_OPTIONS.map((day) => (
                   <button
-                    key={day}
+                    key={day.key}
                     type="button"
-                    onClick={() => toggleDay(day)}
+                    onClick={() => toggleDay(day.key)}
                     className={`px-6 py-3 rounded-2xl font-semibold transition-all duration-300 ${
-                      workingHours[day]
+                      workingHours[day.key]
                         ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/30"
                         : "bg-white/5 text-white/60 hover:bg-white/10"
                     }`}
                   >
-                    {day}
+                    {day.label}
                   </button>
                 ))}
               </div>
@@ -400,15 +399,15 @@ export default function DoctorOnboarding() {
                 Set Hours for Each Day
               </label>
               <div className="grid grid-cols-1 gap-6">
-                {days.map((day) =>
-                  workingHours[day] ? (
+                {DAY_OPTIONS.map((day) =>
+                  workingHours[day.key] ? (
                     <div
-                      key={day}
+                      key={day.key}
                       className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4"
                     >
                       <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-indigo-500" />
-                        {day}
+                        {day.label}
                       </h3>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -417,9 +416,9 @@ export default function DoctorOnboarding() {
                           </label>
                           <input
                             type="time"
-                            value={workingHours[day]?.start || "09:00"}
+                            value={workingHours[day.key]?.start || "09:00"}
                             onChange={(e) =>
-                              updateDayTime(day, "start", e.target.value)
+                              updateDayTime(day.key, "start", e.target.value)
                             }
                             className="w-full bg-white/5 border border-white/10 text-white h-12 rounded-xl px-4 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
                           />
@@ -430,9 +429,9 @@ export default function DoctorOnboarding() {
                           </label>
                           <input
                             type="time"
-                            value={workingHours[day]?.end || "17:00"}
+                            value={workingHours[day.key]?.end || "17:00"}
                             onChange={(e) =>
-                              updateDayTime(day, "end", e.target.value)
+                              updateDayTime(day.key, "end", e.target.value)
                             }
                             className="w-full bg-white/5 border border-white/10 text-white h-12 rounded-xl px-4 focus:outline-none focus:border-indigo-500 focus:bg-white/10 transition-all"
                           />

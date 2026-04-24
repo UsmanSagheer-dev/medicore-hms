@@ -613,7 +613,7 @@ const ConsultationPage = () => {
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-red-600" />
                     <p className="text-gray-600 font-poppins">
-                      {hook.doctorUser?.doctor?.clinic_address ||
+                      {hook.doctorUser?.doctor?.clinic_city ||
                         "123 Medical Plaza, Healthcare City"}
                     </p>
                   </div>

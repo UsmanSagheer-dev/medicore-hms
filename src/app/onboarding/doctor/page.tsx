@@ -34,6 +34,7 @@ export default function DoctorOnboarding() {
   const dispatch = useAppDispatch();
   const { error, success } = useAppSelector((state) => state.doctor);
   const formSubmittedRef = useRef(false);
+  const formScrollRef = useRef<HTMLDivElement>(null);
 
   const {
     step,
@@ -53,6 +54,10 @@ export default function DoctorOnboarding() {
  
 
   useEffect(() => {
+    formScrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, [step]);
+
+  useEffect(() => {
     if (formSubmittedRef.current && success) {
       toast.success("Doctor profile setup complete!");
       router.push("/onboarding/doctor/pending");
@@ -68,8 +73,8 @@ export default function DoctorOnboarding() {
   const stepClass = (s: number) => (step === s ? "block" : "hidden");
 
   return (
-    <div className="w-full max-w-6xl bg-white/5 backdrop-blur-2xl border border-white/10 p-10 rounded-[3rem] shadow-2xl transition-all duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center  gap-6">
+    <div className="w-full max-w-6xl bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[3rem] shadow-2xl transition-all duration-500 flex flex-col max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)]">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 p-6 sm:p-10 sm:pb-6">
         <div>
           <h1 className="text-4xl font-extrabold text-white mb-3">
             Complete Your Doctor Profile
@@ -88,7 +93,7 @@ export default function DoctorOnboarding() {
         </div>
       </div>
 
-      <div className="">
+      <div ref={formScrollRef} className="flex-1 overflow-y-auto px-6 pb-6 sm:px-10 sm:pb-8">
         {/* Step 1: Basic Information */}
         <div className={`space-y-8 animate-in ${stepClass(1)}`}>
           <h2 className="text-2xl font-bold text-white flex items-center gap-3">
@@ -505,7 +510,7 @@ export default function DoctorOnboarding() {
         </div>
       </div>
 
-      <div className="mt-8 flex justify-between items-center bg-white/5 p-6 rounded-4xl border border-white/10">
+      <div className="mt-6 sm:mt-8 flex justify-between items-center bg-white/5 p-6 rounded-4xl border border-white/10 mx-6 mb-6 sm:mx-10 sm:mb-10 shrink-0">
         <button
           onClick={handleBack}
           disabled={step === 1}

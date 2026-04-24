@@ -10,12 +10,17 @@ export type DayKey =
 export type WorkingDaysValue =
   | string
   | string[]
-  | Record<string, { start?: string; end?: string; time?: string; day?: string }>
+  | Record<
+      string,
+      { start?: string; end?: string; time?: string; day?: string }
+    >
   | Array<{ day?: string; time?: string; start?: string; end?: string }>
   | undefined;
 
 export type WorkingDayEntry = { day: DayKey; time: string | undefined };
-export type DayScheduleMap = Partial<Record<DayKey, { start: string; end: string }>>;
+export type DayScheduleMap = Partial<
+  Record<DayKey, { start: string; end: string }>
+>;
 
 const DAY_ALIAS_TO_KEY: Record<string, DayKey> = {
   mon: "monday",
@@ -108,7 +113,9 @@ export function parseWorkingDaysEntries(
   workingDays?: WorkingDaysValue,
 ): WorkingDayEntry[] {
   const normalizeEntries = (
-    entries: Array<{ day?: string; time?: string; start?: string; end?: string } | string>,
+    entries: Array<
+      { day?: string; time?: string; start?: string; end?: string } | string
+    >,
   ): WorkingDayEntry[] => {
     return entries
       .map((entry) => {
@@ -125,7 +132,9 @@ export function parseWorkingDaysEntries(
 
           const time =
             entry.time ||
-            (entry.start && entry.end ? `${entry.start} - ${entry.end}` : undefined);
+            (entry.start && entry.end
+              ? `${entry.start} - ${entry.end}`
+              : undefined);
 
           return { day: normalizedDay, time };
         }

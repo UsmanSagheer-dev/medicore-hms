@@ -26,6 +26,26 @@ interface PharmacyProfile {
   approvedBy?: string;
 }
 
+export interface PharmacyOnboardingFormData {
+  full_name: string;
+  email: string;
+  phone: string;
+  gender: string;
+  date_of_birth: string;
+  license_number: string;
+  registration_authority: string;
+  registration_issue_date: string;
+  registration_expiry_date: string;
+  years_of_experience: string;
+  qualifications: string;
+  pharmacy_college: string;
+  passing_year: string;
+  pharmacy_name: string;
+  pharmacy_city: string;
+  pharmacy_address: string;
+  cnic_number: string;
+}
+
 interface PharmacyState {
   profile: PharmacyProfile | null;
   pendingRequests: PharmacyProfile[];
@@ -50,7 +70,7 @@ const initialState: PharmacyState = {
 
 export const submitPharmacyOnboarding = createAsyncThunk(
   "pharmacy/submitOnboarding",
-  async (formData: Record<string, unknown>, { rejectWithValue }) => {
+  async (formData: PharmacyOnboardingFormData, { rejectWithValue }) => {
     try {
       const response = await api.post("/pharmacy/onboarding/submit", formData);
       return response.data;

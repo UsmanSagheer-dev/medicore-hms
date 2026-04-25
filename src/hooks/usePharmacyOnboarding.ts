@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { submitPharmacyOnboarding } from "@/redux/slices/pharmacySlice";
+import {
+  submitPharmacyOnboarding,
+  type PharmacyOnboardingFormData,
+} from "@/redux/slices/pharmacySlice";
 
-interface PharmacyFormData {
+interface PharmacyFormData extends PharmacyOnboardingFormData {
   full_name: string;
   email: string;
   phone: string;

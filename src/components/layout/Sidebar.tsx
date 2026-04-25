@@ -17,6 +17,7 @@ import {
   UserPlus,
   ChevronLeft,
   ChevronRight,
+  Pill,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -166,6 +167,32 @@ const Sidebar = () => {
         href: "/dashboard/receptionist/settings",
       },
     ],
+    pharmacy: [
+      {
+        id: "dashboard",
+        label: "Dashboard",
+        icon: <LayoutDashboard className="w-5 h-5" />,
+        href: "/dashboard/pharmacy",
+      },
+      {
+        id: "profile",
+        label: "Profile",
+        icon: <UserCircle className="w-5 h-5" />,
+        href: "/dashboard/pharmacy/profile",
+      },
+      {
+        id: "settings",
+        label: "Settings",
+        icon: <Settings className="w-5 h-5" />,
+        href: "/dashboard/pharmacy/settings",
+      },
+      {
+        id: "status",
+        label: "License Status",
+        icon: <Pill className="w-5 h-5" />,
+        href: "/dashboard/pharmacy/profile",
+      },
+    ],
     admin: [
       {
         id: "dashboard",
@@ -252,6 +279,7 @@ const Sidebar = () => {
               <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">
                 {userRole === "doctor" && "Doctor Panel"}
                 {userRole === "receptionist" && "Reception Panel"}
+                {userRole === "pharmacy" && "Pharmacy Panel"}
                 {userRole === "admin" && "Admin Panel"}
               </p>
             </div>

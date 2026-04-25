@@ -36,6 +36,7 @@ const Header = () => {
       return "/dashboard/doctor/profile";
     }
     if (role === "receptionist") return "/dashboard/receptionist/profile";
+    if (role === "pharmacy") return "/dashboard/pharmacy/profile";
     return "/profile";
   };
 
@@ -52,6 +53,7 @@ const Header = () => {
     const roleMap: { [key: string]: string } = {
       doctor: "Hospital Doctor",
       receptionist: "Receptionist",
+      pharmacy: "Pharmacy Staff",
       admin: "System Admin",
     };
     return roleMap[role?.toLowerCase()] || role || "User";

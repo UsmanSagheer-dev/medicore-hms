@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/redux/hooks";
+import api from "@/lib/axios";
 
 export default function Home() {
   const router = useRouter();
@@ -12,7 +13,7 @@ export default function Home() {
 
   useEffect(() => {
     // Small delay to ensure auth state is initialized
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       if (!isAuthenticated) {
         // Not logged in - redirect to login
         router.push("/auth/login");
@@ -26,6 +27,13 @@ export default function Home() {
           router.push("/dashboard/admin");
         } else if (role === "receptionist") {
           router.push("/dashboard/receptionist");
+        } else if (role === "pharmacy") {
+          try {
+            await api.get(`/pharmacies/user/${user.id}`);
+            router.push("/dashboard/pharmacy");
+          } catch {
+            router.push("/onboarding/pharmacy/pending");
+          }
         } else {
           // Unknown role - redirect to login
           router.push("/auth/login");

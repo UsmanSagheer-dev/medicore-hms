@@ -28,6 +28,8 @@ export async function proxy(request: NextRequest) {
         dashboardPath = `/dashboard/doctor/${doctorId}`;
       } else if (userRole === "receptionist") {
         dashboardPath = `/dashboard/receptionist`;
+      } else if (userRole === "pharmacy") {
+        dashboardPath = `/onboarding/pharmacy/pending`;
       } else if (userRole === "admin") {
         dashboardPath = `/dashboard/admin`;
       } else if (userRole) {
@@ -55,6 +57,14 @@ export async function proxy(request: NextRequest) {
 
     if (pathname.startsWith("/dashboard/receptionist")) {
       if (userRole === "receptionist") {
+        return NextResponse.next();
+      } else {
+        return NextResponse.redirect(new URL("/unauthorized", request.url));
+      }
+    }
+
+    if (pathname.startsWith("/dashboard/pharmacy")) {
+      if (userRole === "pharmacy") {
         return NextResponse.next();
       } else {
         return NextResponse.redirect(new URL("/unauthorized", request.url));

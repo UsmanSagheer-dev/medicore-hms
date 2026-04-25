@@ -82,6 +82,7 @@ export const getMe = createAsyncThunk(
     }
   },
 );
+console.log('getMe', getMe);
 
 const clearCookies = () => {
   const options = [
@@ -89,6 +90,7 @@ const clearCookies = () => {
     "userRole",
     "doctorId",
     "receptionistId",
+    "pharmacyId",
     "authToken",
   ];
   options.forEach((name) => {
@@ -118,6 +120,12 @@ const setUserCookies = (userData: any) => {
   if (receptionistId) {
     document.cookie = `receptionistId=${receptionistId}; path=/; max-age=604800`;
     document.cookie = `receptionistId=${receptionistId}; path=/; max-age=604800; SameSite=Lax`;
+  }
+
+  const pharmacyId = userData.pharmacy?.id || userData.pharmacyId;
+  if (pharmacyId) {
+    document.cookie = `pharmacyId=${pharmacyId}; path=/; max-age=604800`;
+    document.cookie = `pharmacyId=${pharmacyId}; path=/; max-age=604800; SameSite=Lax`;
   }
 };
 

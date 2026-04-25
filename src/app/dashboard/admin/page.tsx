@@ -40,6 +40,12 @@ import {
   updateReceptionistStaffData,
   todayPatientVisits,
 } from "@/redux/slices/receptionistSlice";
+import {
+  fetchPendingPharmacyRequests,
+  approvePharmacyRequest,
+  rejectPharmacyRequest,
+  getPharmacyOnboardingDetails,
+} from "@/redux/slices/pharmacySlice";
 import Input from "@/components/ui/Input";
 import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
@@ -48,7 +54,7 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("requests");
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
   const [selectedRequestType, setSelectedRequestType] = useState<
-    "doctor" | "receptionist"
+    "doctor" | "receptionist" | "pharmacy"
   >("doctor");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
@@ -64,9 +70,15 @@ const AdminDashboard = () => {
   const {
     pendingRequests: receptionistPendingRequests,
     loading: receptionistLoading,
+    error: receptionistError,
     receptionists,
     patientVisits,
   } = useSelector((state: RootState) => state.receptionist);
+  const {
+    pendingRequests: pharmacyPendingRequests,
+    loading: pharmacyLoading,
+    error: pharmacyError,
+  } = useSelector((state: RootState) => state.pharmacy);
 
   useEffect(() => {
     dispatch(pendingDoctorRequests());
@@ -82,6 +94,11 @@ const AdminDashboard = () => {
   }, [dispatch]);
 
   useEffect(() => {
+    dispatch(fetchPendingPharmacyRequests());
+    console.log("🔄 Dispatching fetchPendingPharmacyRequests");
+  }, [dispatch]);
+
+  useEffect(() => {
     dispatch(todayPatientVisits());
     console.log("🔄 Dispatching todayPatientVisits", todayPatientVisits);
   }, [dispatch]);
@@ -90,9 +107,13 @@ const AdminDashboard = () => {
   const receptionistRequests = Array.isArray(receptionistPendingRequests)
     ? receptionistPendingRequests
     : [];
+  const pharmacyRequests = Array.isArray(pharmacyPendingRequests)
+    ? pharmacyPendingRequests
+    : [];
 
   console.log("👨‍⚕️ Doctor Requests:", requests);
   console.log("📝 Receptionist Requests:", receptionistRequests);
+  console.log("💊 Pharmacy Requests:", pharmacyRequests);
 
   const stats = [
     {
@@ -111,7 +132,7 @@ const AdminDashboard = () => {
     },
     {
       label: "New Requests",
-      value: requests.length + receptionistRequests.length || "0",
+      value: requests.length + receptionistRequests.length + pharmacyRequests.length || "0",
       icon: UserPlus,
       color: "text-amber-600",
       bg: "bg-amber-50",
@@ -165,9 +186,12 @@ const AdminDashboard = () => {
       if (selectedRequestType === "doctor") {
         await dispatch(approveDoctorRequest(id)).unwrap();
         toast.success("Doctor approved successfully!");
-      } else {
+      } else if (selectedRequestType === "receptionist") {
         await dispatch(approveReceptionistRequest(id)).unwrap();
         toast.success("Receptionist approved successfully!");
+      } else {
+        await dispatch(approvePharmacyRequest(id)).unwrap();
+        toast.success("Pharmacy approved successfully!");
       }
       setIsModalOpen(false);
       setSelectedDoctor(null);
@@ -203,11 +227,16 @@ const AdminDashboard = () => {
           rejectDoctorRequest({ doctorId: id, rejectionReason }),
         ).unwrap();
         toast.success("Doctor request rejected.");
-      } else {
+      } else if (selectedRequestType === "receptionist") {
         await dispatch(
           rejectReceptionistRequest({ receptionistId: id, rejectionReason }),
         ).unwrap();
         toast.success("Receptionist request rejected.");
+      } else {
+        await dispatch(
+          rejectPharmacyRequest({ id, rejectionReason }),
+        ).unwrap();
+        toast.success("Pharmacy request rejected.");
       }
       setIsRejectModalOpen(false);
       setIsModalOpen(false);
@@ -219,10 +248,39 @@ const AdminDashboard = () => {
     }
   };
 
-  const openDetails = (doctor: any) => {
-    setSelectedDoctor(doctor);
-    setIsModalOpen(true);
+  const openDetails = async (requestData: any) => {
+    try {
+      if (selectedRequestType === "pharmacy" && requestData?.id) {
+        const detailResponse = await dispatch(
+          getPharmacyOnboardingDetails(requestData.id),
+        ).unwrap();
+
+        setSelectedDoctor(
+          detailResponse?.data || detailResponse?.onboarding || requestData,
+        );
+      } else {
+        setSelectedDoctor(requestData);
+      }
+      setIsModalOpen(true);
+    } catch (err: any) {
+      console.error("❌ Failed to load full details:", err);
+      toast.error(err?.message || "Failed to load details");
+    }
   };
+
+  const requestRows =
+    selectedRequestType === "doctor"
+      ? requests
+      : selectedRequestType === "receptionist"
+        ? receptionistRequests
+        : pharmacyRequests;
+
+  const requestLoading =
+    selectedRequestType === "doctor"
+      ? loading
+      : selectedRequestType === "receptionist"
+        ? receptionistLoading
+        : pharmacyLoading;
 
   const openEditModal = (staff: any) => {
     setSelectedStaff(staff);
@@ -298,9 +356,9 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {error && (
+      {(error || receptionistError || pharmacyError) && (
         <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-medium">
-          Error: {error}
+          Error: {error || receptionistError || pharmacyError}
         </div>
       )}
 
@@ -372,6 +430,20 @@ const AdminDashboard = () => {
                 )}
               </button>
               <button
+                onClick={() => {
+                  setActiveTab("requests");
+                  setSelectedRequestType("pharmacy");
+                }}
+                className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === "requests" && selectedRequestType === "pharmacy" ? "bg-white text-teal-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Pharmacy Requests
+                {pharmacyRequests.length > 0 && (
+                  <span className="ml-2 bg-teal-600 text-white px-1.5 py-0.5 rounded-full text-[8px]">
+                    {pharmacyRequests.length}
+                  </span>
+                )}
+              </button>
+              <button
                 onClick={() => setActiveTab("doctors")}
                 className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${activeTab === "doctors" ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
@@ -406,31 +478,32 @@ const AdminDashboard = () => {
                   <th className="px-6 py-4">
                     {selectedRequestType === "doctor"
                       ? "Doctor"
-                      : "Receptionist"}{" "}
+                      : selectedRequestType === "receptionist"
+                        ? "Receptionist"
+                        : "Pharmacy"}{" "}
                     Information
                   </th>
                   <th className="px-6 py-4">
                     {selectedRequestType === "doctor"
                       ? "Specialty & Exp."
-                      : " Exp."}
+                      : selectedRequestType === "receptionist"
+                        ? "Exp."
+                        : "License & Exp."}
                   </th>
                   <th className="px-6 py-4">Request Date</th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {(selectedRequestType === "doctor"
-                  ? requests
-                  : receptionistRequests
-                ).map((req: any) => (
+                {requestRows.map((req: any) => (
                   <tr
-                    key={req.cnic_number}
+                    key={req.id || req.cnic_number}
                     className="hover:bg-amber-50/30 transition-colors group"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${selectedRequestType === "doctor" ? "bg-amber-100 text-amber-700" : "bg-purple-100 text-purple-700"}`}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${selectedRequestType === "doctor" ? "bg-amber-100 text-amber-700" : selectedRequestType === "receptionist" ? "bg-purple-100 text-purple-700" : "bg-teal-100 text-teal-700"}`}
                         >
                           {(req.full_name || req.name || "U")
                             .split(" ")
@@ -448,10 +521,21 @@ const AdminDashboard = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-[10px] text-gray-400">
-                        {req.years_of_experience || req.experience || "N/A"}{" "}
-                        experience
-                      </p>
+                      {selectedRequestType === "pharmacy" ? (
+                        <>
+                          <p className="text-xs font-semibold text-gray-700">
+                            {req.license_number || "N/A"}
+                          </p>
+                          <p className="text-[10px] text-gray-400">
+                            {req.years_of_experience || "N/A"} experience
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-[10px] text-gray-400">
+                          {req.years_of_experience || req.experience || "N/A"}{" "}
+                          experience
+                        </p>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-xs font-medium text-gray-600">
@@ -462,10 +546,9 @@ const AdminDashboard = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           console.log("📋 Selected request data:", req);
-                          setSelectedDoctor(req);
-                          setIsModalOpen(true);
+                          await openDetails(req);
                         }}
                         className="px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ml-auto border border-blue-100 active:scale-95"
                       >
@@ -474,9 +557,7 @@ const AdminDashboard = () => {
                     </td>
                   </tr>
                 ))}
-                {(selectedRequestType === "doctor"
-                  ? loading
-                  : receptionistLoading) && (
+                {requestLoading && (
                   <tr>
                     <td
                       colSpan={4}
@@ -486,13 +567,7 @@ const AdminDashboard = () => {
                     </td>
                   </tr>
                 )}
-                {!(selectedRequestType === "doctor"
-                  ? loading
-                  : receptionistLoading) &&
-                  (selectedRequestType === "doctor"
-                    ? requests
-                    : receptionistRequests
-                  ).length === 0 && (
+                {!requestLoading && requestRows.length === 0 && (
                     <tr>
                       <td
                         colSpan={4}
@@ -658,7 +733,7 @@ const AdminDashboard = () => {
             <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <div className="flex items-center gap-4">
                 <div
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg ${selectedRequestType === "doctor" ? "bg-blue-600 shadow-blue-200" : "bg-purple-600 shadow-purple-200"}`}
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg ${selectedRequestType === "doctor" ? "bg-blue-600 shadow-blue-200" : selectedRequestType === "receptionist" ? "bg-purple-600 shadow-purple-200" : "bg-teal-600 shadow-teal-200"}`}
                 >
                   {selectedDoctor.full_name?.charAt(0) || "U"}
                 </div>
@@ -669,6 +744,16 @@ const AdminDashboard = () => {
                   {selectedRequestType === "doctor" && (
                     <p className="text-sm font-bold text-blue-600">
                       {`${selectedDoctor.specialization} • ${selectedDoctor.years_of_experience} Experience`}
+                    </p>
+                  )}
+                  {selectedRequestType === "receptionist" && (
+                    <p className="text-sm font-bold text-purple-600">
+                      {`${selectedDoctor.preferred_shift || selectedDoctor.shiftTiming || "N/A"} • ${selectedDoctor.years_of_experience || "N/A"} Experience`}
+                    </p>
+                  )}
+                  {selectedRequestType === "pharmacy" && (
+                    <p className="text-sm font-bold text-teal-600">
+                      {`${selectedDoctor.license_number || "N/A"} • ${selectedDoctor.years_of_experience || "N/A"} Experience`}
                     </p>
                   )}
                 </div>
@@ -686,11 +771,14 @@ const AdminDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 {/* Personal & Professional Info */}
                 <div className="space-y-8">
-                  {selectedRequestType === "doctor" && (
+                  {(selectedRequestType === "doctor" ||
+                    selectedRequestType === "pharmacy") && (
                     <section>
                       <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                         <BookOpen size={14} className="text-blue-500" />
-                        Professional Credentials
+                        {selectedRequestType === "doctor"
+                          ? "Professional Credentials"
+                          : "License & Credentials"}
                       </h3>
                       <div className="grid gap-4">
                         {selectedRequestType === "doctor" ? (
@@ -710,6 +798,37 @@ const AdminDashboard = () => {
                             <DetailItem
                               label="Medical College"
                               value={selectedDoctor.medical_college}
+                            />
+                            <DetailItem
+                              label="Passing Year"
+                              value={selectedDoctor.passing_year}
+                            />
+                          </>
+                        ) : selectedRequestType === "pharmacy" ? (
+                          <>
+                            <DetailItem
+                              label="License #"
+                              value={selectedDoctor.license_number}
+                            />
+                            <DetailItem
+                              label="Authority"
+                              value={selectedDoctor.registration_authority}
+                            />
+                            <DetailItem
+                              label="Issue Date"
+                              value={selectedDoctor.registration_issue_date}
+                            />
+                            <DetailItem
+                              label="Expiry Date"
+                              value={selectedDoctor.registration_expiry_date}
+                            />
+                            <DetailItem
+                              label="Qualifications"
+                              value={selectedDoctor.qualifications}
+                            />
+                            <DetailItem
+                              label="Pharmacy College"
+                              value={selectedDoctor.pharmacy_college}
                             />
                             <DetailItem
                               label="Passing Year"
@@ -834,6 +953,50 @@ const AdminDashboard = () => {
                         </div>
                       </section>
                     </>
+                  ) : selectedRequestType === "pharmacy" ? (
+                    <>
+                      <section>
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <MapPin size={14} className="text-amber-500" />
+                          Pharmacy Details
+                        </h3>
+                        <div className="grid gap-4">
+                          <DetailItem
+                            label="Pharmacy Name"
+                            value={selectedDoctor.pharmacy_name}
+                          />
+                          <DetailItem
+                            label="City"
+                            value={selectedDoctor.pharmacy_city}
+                          />
+                          <DetailItem
+                            label="Address"
+                            value={selectedDoctor.pharmacy_address}
+                          />
+                        </div>
+                      </section>
+
+                      <section>
+                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <Briefcase size={14} className="text-purple-500" />
+                          Professional Overview
+                        </h3>
+                        <div className="grid gap-4">
+                          <DetailItem
+                            label="Experience"
+                            value={`${selectedDoctor.years_of_experience || "N/A"} years`}
+                          />
+                          <DetailItem
+                            label="Date of Birth"
+                            value={selectedDoctor.date_of_birth}
+                          />
+                          <DetailItem
+                            label="Gender"
+                            value={selectedDoctor.gender}
+                          />
+                        </div>
+                      </section>
+                    </>
                   ) : (
                     <>
                       <section>
@@ -892,7 +1055,7 @@ const AdminDashboard = () => {
               <div className="flex items-center gap-3 w-full sm:w-auto">
                 <button
                   onClick={() => setIsRejectModalOpen(true)}
-                  disabled={loading}
+                  disabled={requestLoading}
                   className="flex-1 sm:flex-none px-8 py-3 bg-white text-red-600 border-2 border-red-100 font-bold rounded-2xl hover:bg-red-50 transition-all active:scale-95 disabled:opacity-50"
                 >
                   Reject Request
@@ -910,17 +1073,19 @@ const AdminDashboard = () => {
                     }
                     handleApprove(requestId);
                   }}
-                  disabled={loading}
-                  className={`flex-1 sm:flex-none px-10 py-3 text-white font-bold rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 ${selectedRequestType === "doctor" ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200" : "bg-purple-600 hover:bg-purple-700 shadow-purple-200"}`}
+                  disabled={requestLoading}
+                  className={`flex-1 sm:flex-none px-10 py-3 text-white font-bold rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 ${selectedRequestType === "doctor" ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200" : selectedRequestType === "receptionist" ? "bg-purple-600 hover:bg-purple-700 shadow-purple-200" : "bg-teal-600 hover:bg-teal-700 shadow-teal-200"}`}
                 >
-                  {loading ? (
+                  {requestLoading ? (
                     "Processing..."
                   ) : (
                     <>
                       <ShieldCheck size={18} /> Approve{" "}
                       {selectedRequestType === "doctor"
                         ? "Doctor"
-                        : "Receptionist"}
+                        : selectedRequestType === "receptionist"
+                          ? "Receptionist"
+                          : "Pharmacy"}
                     </>
                   )}
                 </button>
@@ -948,7 +1113,9 @@ const AdminDashboard = () => {
               placeholder={
                 selectedRequestType === "doctor"
                   ? "e.g. Invalid registration documents or incomplete profile..."
-                  : "e.g. Incomplete qualifications or missing documents..."
+                  : selectedRequestType === "receptionist"
+                    ? "e.g. Incomplete qualifications or missing documents..."
+                    : "e.g. License verification failed or invalid pharmacy details..."
               }
               className="w-full h-32 p-4 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all resize-none mb-6 font-medium text-gray-700"
             />
@@ -962,10 +1129,10 @@ const AdminDashboard = () => {
               </button>
               <button
                 onClick={handleReject}
-                disabled={loading}
+                disabled={requestLoading}
                 className="flex-2 px-6 py-3 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 shadow-lg shadow-red-200 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {loading ? "Processing..." : "Confirm Rejection"}
+                {requestLoading ? "Processing..." : "Confirm Rejection"}
               </button>
             </div>
           </div>

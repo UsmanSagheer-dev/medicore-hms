@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import { loginUser, clearError } from "@/redux/slices/authSlice";
+import api from "@/lib/axios";
 
 import Button from "@/components/ui/Button";
 
@@ -56,6 +57,15 @@ function Login() {
             dispatch(clearError());
             router.push("/onboarding/receptionist/pending");
           }
+        } else if (role === "pharmacy") {
+          try {
+            await api.get(`/pharmacies/user/${user.id}`);
+            toast.success(`Welcome back, ${user.name}`);
+            router.push("/dashboard/pharmacy");
+          } catch {
+            dispatch(clearError());
+            router.push("/onboarding/pharmacy/pending");
+          }
         } else if (role === "admin") {
           toast.success(`Welcome back, ${user.name}`);
           // Force full page reload for admin to ensure cookies are sent
@@ -92,6 +102,7 @@ function Login() {
     e.preventDefault();
     dispatch(loginUser(formData));
   };
+  
   return (
     <div className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl">
       <div className="text-center mb-10">

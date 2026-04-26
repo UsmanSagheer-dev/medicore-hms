@@ -3,13 +3,63 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "@/redux/hooks";
-import api from "@/lib/axios";
 
 export default function Home() {
   const router = useRouter();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const user = useAppSelector((state) => state.auth.user);
   const loading = useAppSelector((state) => state.auth.loading);
+
+  const resolveRoleRoute = (authUser: any) => {
+    const role = authUser.role?.toLowerCase();
+
+    if (role === "doctor") {
+      const doctorId = authUser.doctor?.id || authUser.doctorId;
+      const status = String(authUser.doctorOnboarding?.status || "").toLowerCase();
+
+      if (doctorId || status === "approved") {
+        return doctorId
+          ? `/dashboard/doctor/${doctorId}`
+          : "/onboarding/doctor/pending";
+      }
+
+      if (status) return "/onboarding/doctor/pending";
+      return "/onboarding/doctor";
+    }
+
+    if (role === "receptionist") {
+      const receptionistId =
+        authUser.receptionist?.id || authUser.receptionistId;
+      const status = String(
+        authUser.receptionistOnboarding?.status || "",
+      ).toLowerCase();
+
+      if (receptionistId || status === "approved") {
+        return "/dashboard/receptionist";
+      }
+
+      if (status) return "/onboarding/receptionist/pending";
+      return "/onboarding/reception";
+    }
+
+    if (role === "pharmacy") {
+      const pharmacyId = authUser.pharmacy?.id || authUser.pharmacyId;
+      const status = String(authUser.pharmacyOnboarding?.status || "").toLowerCase();
+
+      if (pharmacyId || status === "approved" || status === "active") {
+        return "/dashboard/pharmacy";
+      }
+
+      if (status) return "/onboarding/pharmacy/pending";
+      return "/onboarding/pharmacy";
+    }
+
+    if (role === "admin") {
+      return "/dashboard/admin";
+    }
+
+    return "/auth/login";
+  };
 
   useEffect(() => {
     // Small delay to ensure auth state is initialized
@@ -18,26 +68,7 @@ export default function Home() {
         // Not logged in - redirect to login
         router.push("/auth/login");
       } else if (user) {
-        // Logged in - redirect based on role
-        const role = user.role?.toLowerCase();
-        
-        if (role === "doctor") {
-          router.push(`/dashboard/doctor/${user.id}`);
-        } else if (role === "admin") {
-          router.push("/dashboard/admin");
-        } else if (role === "receptionist") {
-          router.push("/dashboard/receptionist");
-        } else if (role === "pharmacy") {
-          try {
-            await api.get(`/pharmacies/user/${user.id}`);
-            router.push("/dashboard/pharmacy");
-          } catch {
-            router.push("/onboarding/pharmacy/pending");
-          }
-        } else {
-          // Unknown role - redirect to login
-          router.push("/auth/login");
-        }
+        router.push(resolveRoleRoute(user));
       }
     }, 100);
 

@@ -13,7 +13,11 @@ import {
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
-import { getPharmacyByUserId } from "@/redux/slices/pharmacySlice";
+import {
+  getPharmacyByUserId,
+  getPharmacyOnboardingByUserId,
+  resolvePharmacyOnboardingRoute,
+} from "@/redux/slices/pharmacySlice";
 
 export default function PharmacyDashboardPage() {
   const router = useRouter();
@@ -25,10 +29,30 @@ export default function PharmacyDashboardPage() {
     const verifyApprovedProfile = async () => {
       if (!user?.id) return;
 
+      const verifyOnboardingState = async () => {
+        const payload = await dispatch(
+          getPharmacyOnboardingByUserId(user.id),
+        ).unwrap();
+        const nextRoute = resolvePharmacyOnboardingRoute(payload);
+
+        if (nextRoute === "pending") {
+          router.replace("/onboarding/pharmacy/pending");
+          return;
+        }
+
+        if (nextRoute === "onboarding") {
+          router.replace("/onboarding/pharmacy");
+        }
+      };
+
       try {
         await dispatch(getPharmacyByUserId(user.id)).unwrap();
       } catch {
-        router.replace("/onboarding/pharmacy/pending");
+        try {
+          await verifyOnboardingState();
+        } catch {
+          router.replace("/onboarding/pharmacy");
+        }
       }
     };
 

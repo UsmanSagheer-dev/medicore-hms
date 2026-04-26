@@ -23,6 +23,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { usePharmacyOnboarding } from "@/hooks/usePharmacyOnboarding";
 import { resetPharmacyState } from "@/redux/slices/pharmacySlice";
 import toast from "react-hot-toast";
+import { getMe } from "@/redux/slices/authSlice";
 
 const steps = [
   { id: 1, title: "Personal Info", icon: User },
@@ -53,7 +54,7 @@ export default function PharmacyOnboardingPage() {
   }, [isAuthenticated, user, router]);
 
   useEffect(() => {
-    dispatch(resetPharmacyState());
+    dispatch(getMe());
   }, [dispatch]);
 
   useEffect(() => {

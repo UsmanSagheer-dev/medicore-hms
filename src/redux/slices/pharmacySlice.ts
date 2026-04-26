@@ -57,6 +57,49 @@ interface PharmacyState {
   success: boolean;
 }
 
+export type PharmacyRouteDecision = "onboarding" | "pending" | "dashboard";
+
+const hasOnboardingRecord = (onboarding: any) => {
+  if (!onboarding || typeof onboarding !== "object") return false;
+
+  return Boolean(
+    onboarding.id ||
+      onboarding.userId ||
+      onboarding.pharmacyId ||
+      onboarding.status ||
+      onboarding.license_number ||
+      onboarding.registration_authority ||
+      onboarding.pharmacy_name ||
+      onboarding.full_name ||
+      onboarding.createdAt ||
+      onboarding.updatedAt ||
+      onboarding.isApproved === true,
+  );
+};
+
+export const resolvePharmacyOnboardingRoute = (
+  payload: any,
+): PharmacyRouteDecision => {
+  const onboarding = payload?.data || payload?.onboarding || payload || null;
+  const hasSuccessFlag = typeof payload?.success === "boolean";
+
+  if (hasSuccessFlag && payload.success === false) {
+    return "onboarding";
+  }
+
+  if (!hasOnboardingRecord(onboarding)) {
+    return "onboarding";
+  }
+
+  const status = String(onboarding.status || "").toLowerCase();
+  const isApproved =
+    onboarding.isApproved === true ||
+    status === "approved" ||
+    status === "active";
+
+  return isApproved ? "dashboard" : "pending";
+};
+
 const initialState: PharmacyState = {
   profile: null,
   pendingRequests: [],
@@ -208,6 +251,18 @@ export const getPharmacyByUserId = createAsyncThunk(
   async (userId: string, { rejectWithValue }) => {
     try {
       const response = await api.get(`/pharmacies/user/${userId}`);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || error.message);
+    }
+  },
+);
+
+export const getPharmacyOnboardingByUserId = createAsyncThunk(
+  "pharmacy/getOnboardingByUserId",
+  async (userId: string, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/pharmacy/onboarding/user/${userId}`);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -433,6 +488,25 @@ export const pharmacySlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
         state.success = false;
+      })
+      .addCase(getPharmacyOnboardingByUserId.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getPharmacyOnboardingByUserId.fulfilled, (state, action) => {
+        state.loading = false;
+        state.success = true;
+        state.selectedOnboarding =
+          action.payload?.data ||
+          action.payload?.onboarding ||
+          action.payload ||
+          null;
+      })
+      .addCase(getPharmacyOnboardingByUserId.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        state.success = false;
+        state.selectedOnboarding = null;
       })
       .addCase(updatePharmacyProfile.pending, (state) => {
         state.loading = true;

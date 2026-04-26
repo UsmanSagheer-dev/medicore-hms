@@ -29,7 +29,7 @@ export async function proxy(request: NextRequest) {
       } else if (userRole === "receptionist") {
         dashboardPath = `/dashboard/receptionist`;
       } else if (userRole === "pharmacy") {
-        dashboardPath = `/onboarding/pharmacy/pending`;
+        dashboardPath = `/`;
       } else if (userRole === "admin") {
         dashboardPath = `/dashboard/admin`;
       } else if (userRole) {

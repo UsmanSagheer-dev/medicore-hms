@@ -52,6 +52,7 @@ export const loginUser = createAsyncThunk(
   async (userData: any, { rejectWithValue }) => {
     try {
       const response = await api.post("/auth/login", userData);
+      console.log("Login response:", response.data);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -82,7 +83,7 @@ export const getMe = createAsyncThunk(
     }
   },
 );
-console.log('getMe', getMe);
+console.log("getMe", getMe);
 
 const clearCookies = () => {
   const options = [
@@ -156,7 +157,6 @@ export const authSlice = createSlice({
       state.error = null;
     },
     clearJustRegistered: (state) => {
-      // ✅ نیا reducer
       state.justRegistered = false;
     },
   },

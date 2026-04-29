@@ -21,7 +21,7 @@ function Signup() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'ADMIN' as 'ADMIN' | 'DOCTOR' | 'RECEPTIONIST',
+    role: 'ADMIN' as 'ADMIN' | 'DOCTOR' | 'RECEPTIONIST' | 'PHARMACY',
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -35,6 +35,8 @@ function Signup() {
         router.push('/dashboard/admin');
       } else if (role === 'receptionist') {
         router.push('/onboarding/reception');
+      } else if (role === 'pharmacy') {
+        router.push('/onboarding/pharmacy');
       } else if (role) {
         router.push(`/onboarding/${role}`);
       }
@@ -111,6 +113,7 @@ function Signup() {
               { label: 'Admin', value: 'ADMIN' },
               { label: 'Doctor', value: 'DOCTOR' },
               { label: 'Receptionist', value: 'RECEPTIONIST' },
+              { label: 'Pharmacy', value: 'PHARMACY' },
             ]}
             required
             className='bg-white/5 border-white/10 text-white h-11 rounded-xl focus:ring-2 focus:ring-blue-500/50'

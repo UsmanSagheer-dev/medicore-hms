@@ -24,48 +24,93 @@ function Login() {
   });
   const [showPassword, setShowPassword] = useState(false);
 
+  const resolveRoleRoute = (authUser: any) => {
+    const role = authUser.role;
+
+    if (role === "doctor") {
+      const doctorId = authUser.doctor?.id;
+      const status = String(authUser.doctorOnboarding?.status || "").toLowerCase();
+
+      if (doctorId || status === "approved") {
+        return doctorId
+          ? `/dashboard/doctor/${doctorId}`
+          : "/onboarding/doctor/pending";
+      }
+
+      if (status) {
+        return "/onboarding/doctor/pending";
+      }
+
+      return "/onboarding/doctor";
+    }
+
+    if (role === "receptionist") {
+      const receptionistId =
+        authUser.receptionist?.id;
+      const status = String(
+        authUser.receptionistOnboarding?.status || "".toLowerCase(),
+      );
+
+      if (receptionistId || status === "approved") {
+        return "/dashboard/receptionist";
+      }
+
+      if (status) {
+        return "/onboarding/receptionist/pending";
+      }
+
+      return "/onboarding/reception";
+    }
+
+    if (role === "PHARMACY") {
+      const pharmacyId = authUser.pharmacy?.id;
+      const status = String(authUser.pharmacyOnboarding?.status || "").toLowerCase();
+
+      if (pharmacyId || status === "approved") {
+        return "/dashboard/pharmacy";
+      }
+
+      if (status) {
+        return "/onboarding/pharmacy/pending";
+      }
+
+      return "/onboarding/pharmacy";
+    }
+
+    if (role === "ADMIN") {
+      return "/dashboard/admin";
+    }
+
+    return "/auth/login";
+  };
+
   // Handle redirect after successful login
   useEffect(() => {
     if (hasRedirected.current) return;
 
     if (isAuthenticated && user) {
       hasRedirected.current = true;
-      const role = user.role?.toLowerCase();
 
       const redirect = async () => {
         // Wait longer for cookies to be set and visible
         await new Promise((resolve) => setTimeout(resolve, 500));
 
-        if (role === "doctor") {
-          const doctorId = user.doctor?.id;
-          if (doctorId) {
-            toast.success(`Welcome back, ${user.name}`);
-            console.log("➡️ Redirecting to /dashboard/doctor/", doctorId);
-            router.push(`/dashboard/doctor/${doctorId}`);
-          } else {
-            dispatch(clearError());
-            router.push("/onboarding/doctor/pending");
-          }
-        } else if (role === "receptionist") {
-          const receptionistId = user.receptionist?.id;
-          if (receptionistId) {
-            toast.success(`Welcome back, ${user.name}`);
-            console.log("➡️ Redirecting to /dashboard/receptionist");
-            router.push(`/dashboard/receptionist`);
-          } else {
-            dispatch(clearError());
-            router.push("/onboarding/receptionist/pending");
-          }
-        } else if (role === "admin") {
+        const targetRoute = resolveRoleRoute(user);
+
+        if (targetRoute === "/dashboard/admin") {
           toast.success(`Welcome back, ${user.name}`);
           // Force full page reload for admin to ensure cookies are sent
           setTimeout(() => {
-            window.location.href = "/dashboard/admin";
+            window.location.href = targetRoute;
           }, 500);
+          return;
+        }
+
+        if (targetRoute !== "/auth/login") {
+          router.push(targetRoute);
         } else {
-          console.log("⚠️ Unknown role:", role);
-          toast.success(`Welcome back, ${user.name}`);
-          router.push(`/dashboard/${role}`);
+          dispatch(clearError());
+          router.push("/auth/login");
         }
       };
 
@@ -92,6 +137,7 @@ function Login() {
     e.preventDefault();
     dispatch(loginUser(formData));
   };
+  
   return (
     <div className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl">
       <div className="text-center mb-10">

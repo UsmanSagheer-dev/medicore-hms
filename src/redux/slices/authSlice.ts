@@ -52,6 +52,7 @@ export const loginUser = createAsyncThunk(
   async (userData: any, { rejectWithValue }) => {
     try {
       const response = await api.post("/auth/login", userData);
+      console.log("Login response:", response.data);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || error.message);
@@ -82,6 +83,7 @@ export const getMe = createAsyncThunk(
     }
   },
 );
+console.log("getMe", getMe);
 
 const clearCookies = () => {
   const options = [
@@ -89,6 +91,7 @@ const clearCookies = () => {
     "userRole",
     "doctorId",
     "receptionistId",
+    "pharmacyId",
     "authToken",
   ];
   options.forEach((name) => {
@@ -119,6 +122,12 @@ const setUserCookies = (userData: any) => {
     document.cookie = `receptionistId=${receptionistId}; path=/; max-age=604800`;
     document.cookie = `receptionistId=${receptionistId}; path=/; max-age=604800; SameSite=Lax`;
   }
+
+  const pharmacyId = userData.pharmacy?.id || userData.pharmacyId;
+  if (pharmacyId) {
+    document.cookie = `pharmacyId=${pharmacyId}; path=/; max-age=604800`;
+    document.cookie = `pharmacyId=${pharmacyId}; path=/; max-age=604800; SameSite=Lax`;
+  }
 };
 
 export const authSlice = createSlice({
@@ -148,7 +157,6 @@ export const authSlice = createSlice({
       state.error = null;
     },
     clearJustRegistered: (state) => {
-      // ✅ نیا reducer
       state.justRegistered = false;
     },
   },

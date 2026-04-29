@@ -198,113 +198,227 @@ const ConsultationPage = () => {
             </div>
 
             {/* Add Medicines Card */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <Pill className="w-5 h-5 text-emerald-600" />
-                <h3 className="font-bold text-gray-900 font-poppins">
-                  Add Medicines
-                </h3>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5 font-poppins">
-                    Medicine Name
-                  </label>
-                  <Input
-                    type="text"
-                    value={hook.newMedicine.name}
-                    onChange={(e) =>
-                      hook.setNewMedicine({ ...hook.newMedicine, name: e.target.value })
-                    }
-                    placeholder="e.g., Paracetamol"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm font-poppins"
-                  />
+            {/* ─── Add Medicines Card — replace the existing one in ConsultationPage.tsx ─── */}
+
+<div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+  <div className="flex items-center gap-2 mb-4">
+    <Pill className="w-5 h-5 text-emerald-600" />
+    <h3 className="font-bold text-gray-900 font-poppins">Add Medicines</h3>
+  </div>
+
+  <div className="space-y-3">
+
+    {/* ── Medicine Name + Search Dropdown ── */}
+    <div>
+      <label className="block text-xs font-semibold text-gray-700 mb-1.5 font-poppins">
+        Medicine Name
+      </label>
+      <div className="relative">
+        <Input
+          type="text"
+          value={hook.searchQuery}
+          onChange={(e) => hook.handleMedicineSearch(e.target.value)}
+         onFocus={() => hook.searchResults.length > 0 && hook.handleMedicineSearch(hook.searchQuery)}
+          placeholder="Type to search pharmacy medicines..."
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm font-poppins"
+        />
+
+        {/* Loading indicator */}
+        {hook.searchLoading && (
+          <div className="absolute right-3 top-2.5">
+            <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+
+        {/* Dropdown results */}
+        {hook.showDropdown && hook.searchResults.length > 0 && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
+            {hook.searchResults.map((med: any) => (
+              <button
+                key={med.id}
+                type="button"
+                onClick={() => hook.handleSelectPharmacyMedicine(med)}
+                className="w-full text-left px-4 py-3 hover:bg-emerald-50 transition-colors border-b border-gray-100 last:border-0"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 font-poppins">
+                      {med.medicine_name}
+                    </p>
+                    <p className="text-xs text-gray-500 font-poppins">
+                      {[med.generic_name, med.strength, med.dosage_form]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-medium text-emerald-700 font-poppins">
+                      Stock: {med.stock_quantity} {med.base_unit}
+                    </p>
+                    {med.selling_price && (
+                      <p className="text-xs text-gray-400 font-poppins">
+                        Rs. {med.selling_price}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5 font-poppins">
-                    Dosage
-                  </label>
-                  <Input
-                    type="text"
-                    value={hook.newMedicine.dosage}
-                    onChange={(e) =>
-                      hook.setNewMedicine({ ...hook.newMedicine, dosage: e.target.value })
-                    }
-                    placeholder="e.g., 500mg"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm font-poppins"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5 font-poppins">
-                    Frequency
-                  </label>
-                  <Input
-                    type="text"
-                    value={hook.newMedicine.frequency}
-                    onChange={(e) =>
-                      hook.setNewMedicine({
-                        ...hook.newMedicine,
-                        frequency: e.target.value,
-                      })
-                    }
-                    placeholder="e.g., 3 times daily"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm font-poppins"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5 font-poppins">
-                    Duration
-                  </label>
-                  <Input
-                    type="text"
-                    value={hook.newMedicine.duration}
-                    onChange={(e) =>
-                      hook.setNewMedicine({
-                        ...hook.newMedicine,
-                        duration: e.target.value,
-                      })
-                    }
-                    placeholder="e.g., 5 days"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm font-poppins"
-                  />
-                </div>
-                <button
-                  onClick={hook.handleAddMedicine}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-colors text-sm mt-2 font-poppins"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Medicine
-                </button>
-              </div>
-              {hook.medicines.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
-                  <p className="text-xs font-semibold text-gray-700 font-poppins">
-                    Added Medicines ({hook.medicines.length})
-                  </p>
-                  {hook.medicines.map((medicine) => (
-                    <div
-                      key={medicine.id}
-                      className="flex items-start justify-between gap-2 p-3 bg-emerald-50 rounded-lg border border-emerald-100"
-                    >
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-gray-900 font-poppins">
-                          {medicine.name}
-                        </p>
-                        <p className="text-xs text-gray-600 font-poppins">
-                          {medicine.dosage} • {medicine.frequency} • {medicine.duration}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => hook.handleRemoveMedicine(medicine.id)}
-                        className="p-1.5 hover:bg-red-100 text-red-600 rounded transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* No results */}
+        {hook.showDropdown && !hook.searchLoading && hook.searchResults.length === 0 && hook.searchQuery.trim() && (
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg">
+            <p className="px-4 py-3 text-sm text-gray-400 font-poppins">
+              No medicines found in pharmacy
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Selected medicine confirmation badge */}
+      {hook.newMedicine.medicineId && (
+        <div className="mt-1.5 flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <p className="text-xs text-emerald-700 font-medium font-poppins">
+            Linked to pharmacy: {hook.newMedicine.name}
+          </p>
+        </div>
+      )}
+
+      {/* Warning if name typed but no selection */}
+    {hook.showDropdown && hook.searchResults.length > 0 && !hook.newMedicine.medicineId && (
+  <p className="mt-1 text-xs text-amber-600 font-poppins">
+    Please select from dropdown — pharmacy needs the medicine ID to dispense
+  </p>
+)}
+    </div>
+
+    {/* ── Dosage ── */}
+    <div>
+      <label className="block text-xs font-semibold text-gray-700 mb-1.5 font-poppins">
+        Dosage
+      </label>
+      <Input
+        type="text"
+        value={hook.newMedicine.dosage}
+        onChange={(e) => hook.setNewMedicine({ ...hook.newMedicine, dosage: e.target.value })}
+        placeholder="e.g., 500mg"
+        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm font-poppins"
+      />
+    </div>
+
+    {/* ── Frequency ── */}
+    <div>
+      <label className="block text-xs font-semibold text-gray-700 mb-1.5 font-poppins">
+        Frequency
+      </label>
+      <Input
+        type="text"
+        value={hook.newMedicine.frequency}
+        onChange={(e) => hook.setNewMedicine({ ...hook.newMedicine, frequency: e.target.value })}
+        placeholder="e.g., 3 times daily"
+        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm font-poppins"
+      />
+    </div>
+
+    {/* ── Duration ── */}
+    <div>
+      <label className="block text-xs font-semibold text-gray-700 mb-1.5 font-poppins">
+        Duration
+      </label>
+      <Input
+        type="text"
+        value={hook.newMedicine.duration}
+        onChange={(e) => hook.setNewMedicine({ ...hook.newMedicine, duration: e.target.value })}
+        placeholder="e.g., 5 days"
+        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm font-poppins"
+      />
+    </div>
+
+    {/* ── Quantity + Unit ── */}
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <label className="block text-xs font-semibold text-gray-700 mb-1.5 font-poppins">
+          Quantity
+        </label>
+        <Input
+          type="number"
+          min="1"
+          value={hook.newMedicine.quantity}
+          onChange={(e) =>
+            hook.setNewMedicine({ ...hook.newMedicine, quantity: Number(e.target.value) })
+          }
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm font-poppins"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-gray-700 mb-1.5 font-poppins">
+          Unit
+        </label>
+        <Input
+          type="text"
+          value={hook.newMedicine.unit}
+          onChange={(e) =>
+            hook.setNewMedicine({ ...hook.newMedicine, unit: e.target.value.toUpperCase() })
+          }
+          placeholder="TABLET"
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm font-poppins uppercase"
+        />
+      </div>
+    </div>
+
+    {/* ── Add Button ── */}
+    <button
+      onClick={hook.handleAddMedicine}
+      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-colors text-sm mt-2 font-poppins"
+    >
+      <Plus className="w-4 h-4" />
+      Add Medicine
+    </button>
+  </div>
+
+  {/* ── Added medicines list ── */}
+  {hook.medicines.length > 0 && (
+    <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+      <p className="text-xs font-semibold text-gray-700 font-poppins">
+        Added Medicines ({hook.medicines.length})
+      </p>
+      {hook.medicines.map((medicine) => (
+        <div
+          key={medicine.id}
+          className="flex items-start justify-between gap-2 p-3 bg-emerald-50 rounded-lg border border-emerald-100"
+        >
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-gray-900 font-poppins">
+                {medicine.name}
+              </p>
+              {/* Green dot = linked to pharmacy, red = not linked */}
+              <span
+                className={`inline-block w-2 h-2 rounded-full ${
+                  medicine.medicineId ? "bg-emerald-500" : "bg-red-400"
+                }`}
+                title={medicine.medicineId ? "Linked to pharmacy" : "Not linked — cannot dispense"}
+              />
             </div>
+            <p className="text-xs text-gray-600 font-poppins">
+              {medicine.dosage} · {medicine.frequency} · {medicine.duration}
+              {medicine.quantity && ` · Qty: ${medicine.quantity} ${medicine.unit || ""}`}
+            </p>
+          </div>
+          <button
+            onClick={() => hook.handleRemoveMedicine(medicine.id)}
+            className="p-1.5 hover:bg-red-100 text-red-600 rounded transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
 
             {/* Next Follow-up Date */}
             <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAppSelector } from "@/redux/hooks";
 import {
   LayoutDashboard,
@@ -64,6 +64,7 @@ function SidebarUserProfile({
 
 const Sidebar = () => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useAppSelector((state) => state.auth);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -168,12 +169,32 @@ const Sidebar = () => {
       },
     ],
     pharmacy: [
-      {
+        {
         id: "dashboard",
         label: "Dashboard",
         icon: <LayoutDashboard className="w-5 h-5" />,
         href: "/dashboard/pharmacy",
       },
+  
+      {
+        id: "medicines",
+        label: "Medicines",
+        icon: <Pill className="w-5 h-5" />,
+        href: "/dashboard/pharmacy?tab=medicines",
+      },
+      {
+        id: "dispense",
+        label: "Dispense",
+        icon: <ClipboardList className="w-5 h-5" />,
+        href: "/dashboard/pharmacy?tab=dispense",
+      },
+      {
+        id: "reports",
+        label: "Reports",
+        icon: <BarChart3 className="w-5 h-5" />,
+        href: "/dashboard/pharmacy?tab=reports",
+      },
+    
       {
         id: "profile",
         label: "Profile",
@@ -242,10 +263,21 @@ const Sidebar = () => {
 
   const currentItems = sidebarConfig[userRole] || sidebarConfig.doctor;
 
-  const isActiveRoute = (href: string) => {
-    if (href === pathname) return true;
+  const isActiveRoute = (href: string, itemId: string) => {
+    const [targetPathname, targetQuery = ""] = href.split("?");
 
-    return false;
+    if (targetPathname !== pathname) return false;
+
+    if (!targetQuery) {
+      return itemId === "dashboard" && !searchParams?.get("tab");
+    }
+
+    const targetTab = new URLSearchParams(targetQuery).get("tab");
+    if (targetTab) {
+      return searchParams?.get("tab") === targetTab;
+    }
+
+    return itemId === "dashboard";
   };
 
   const handleNavigation = (href: string) => {
@@ -303,7 +335,7 @@ const Sidebar = () => {
       {/* Navigation Items */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {currentItems.map((item) => {
-          const isActive = isActiveRoute(item.href);
+          const isActive = isActiveRoute(item.href, item.id);
           return (
             <button
               key={item.id}
